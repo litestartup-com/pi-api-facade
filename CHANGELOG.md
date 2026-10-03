@@ -7,6 +7,13 @@ Format follows Keep a Changelog; versions follow SemVer.
 
 ### Added
 
+- Web demos on the Pi stack (D2): `examples/demos/compose.demos.yml` overlay —
+  KB Studio + Support widget single-sourced from the gateway repo (build context
+  via `GATEWAY_DIR`), re-pointed at the Pi facade with pi personas
+  (`examples/demos/seed/`) and this repo's docs as the knowledge base
+  (`scripts/sync-demo-docs.mjs`); `scripts/demo-smoke.mjs` drives both BFFs the
+  way their browsers do (pages, file CRUD, doc sync, SSE chat rounds, history)
+  and runs in CI against the fake engine.
 - Standalone docker stack (D1): thin runtime image (`docker/Dockerfile` —
   node + git/ripgrep, non-root, healthcheck; nginx/demo never enter it per the
   deployment red line), `docker-compose.yml` mirroring the proven gateway
@@ -85,6 +92,12 @@ per-run billing incl. continued runs, git audit commits).
   factory with `{prefix}/health` (`src/server.ts`), graceful-shutdown entrypoint
   (`src/index.ts`), node:test suite, bilingual README skeletons, MIT license,
   repo discipline in `AGENTS.md`.
+
+### Changed
+
+- Approval outcome vocabulary widened to the full DSH set —
+  `allowed-once | rejected | cancelled | unavailable` all settle the card
+  (anything but allowed-once blocks the tool); finding G3 of the D0 survey.
 
 ### Fixed
 

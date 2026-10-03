@@ -122,7 +122,13 @@ export interface ApprovalRequest {
   reason: string | null;
 }
 
-export type ApprovalOutcome = "allowed-once" | "rejected" | "expired";
+/**
+ * Operator/TTL decisions for an approval card. Vocabulary parity with the DSH
+ * host (facade-client.mjs documents the four respond outcomes): allowed-once
+ * lets the tool run; rejected / cancelled / unavailable all block; expired is
+ * the facade-side TTL outcome and never arrives over respond.
+ */
+export type ApprovalOutcome = "allowed-once" | "rejected" | "cancelled" | "unavailable" | "expired";
 
 /** Injected by the facade layer (CardTable): resolves when the operator decides or the card TTL expires. */
 export type ApprovalGate = (request: ApprovalRequest) => Promise<ApprovalOutcome>;

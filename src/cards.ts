@@ -93,7 +93,14 @@ export class CardTable {
         return { accepted: false, reason: "not-pending" };
       }
       const outcome = v["outcome"];
-      if (outcome !== "allowed-once" && outcome !== "rejected") return { accepted: false, reason: "bad-response" };
+      if (
+        outcome !== "allowed-once" &&
+        outcome !== "rejected" &&
+        outcome !== "cancelled" &&
+        outcome !== "unavailable"
+      ) {
+        return { accepted: false, reason: "bad-response" };
+      }
       this.settle(rpcId, outcome);
       return { accepted: true };
     }

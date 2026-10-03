@@ -1,0 +1,92 @@
+# Demo overlay for the standalone Pi API stack — adds the two web demos behind
+# the SAME nginx front door and the SAME facade node:
+#
+#   http://<host>:${HTTP_PORT}/kb/   KB Studio — knowledge-base management
+#                                    (direct file CRUD + an AI steward session pinned
+#                                    to workspace-write; approvals auto-decided)
+#   http://<host>:${HTTP_PORT}/cs/   Support widget — read-only support agent grounded
+#                                    in the same knowledge base (session pinned to
+#                                    read-only: on the Pi runtime that tier physically
+#                                    removes bash/write/edit)
+#
+# The demo BFFs and UI are single-sourced in the ohdsh-api-facade repository
+# (litestartup-com/dsh-api-gateway) — this overlay only re-points them at the Pi
+# facade and swaps the persona/doc seeds for pi-api-facade ones. Nothing is
+# copied or forked at build time beyond the upstream demo images themselves.
+#
+# Prerequisites:
+#   1. A checkout of the gateway repo (default: ../dsh-api-gateway; override with
+#      GATEWAY_DIR in .env).
+#   2. node scripts/sync-demo-docs.mjs   (seeds the KB from THIS repo's docs)
+#
+# Usage (from this repo root, with the base stack's .env in place):
+#   mkdir -p workspaces/kb workspaces/cs
+#   docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml up -d --build
+#
+# Pi-runtime notes (honest degradations, plan-pi-facade-standalone D0):
+#   - question cards: the Pi engine has no ask surface yet (D3 adds an ask_user
+#     tool bridge); until then the agent asks clarifications in plain reply text.
+#   - approval cards only fire in the danger tier, so the KB demo's auto-approve
+#     policy is a no-op here (the sandbox pin is the real guard, same as on DSH).
+
+services:
+  nginx:
+    volumes:
+      # Replaces the base (empty) locations.d mount: adds /kb/ and /cs/ proxy
+      # locations, single-sourced from the gateway checkout. The fail-closed
+      # default in pi-facade.conf is untouched — everything else stays 404.
+      - ${GATEWAY_DIR:-../dsh-api-gateway}/examples/demos/nginx/locations.d:/etc/nginx/conf.d/locations.d:ro
+    depends_on:
+      facade:
+        condition: service_healthy
+      kb-demo:
+        condition: service_started
+      cs-demo:
+        condition: service_started
+
+  kb-demo:
+    build:
+      context: ${GATEWAY_DIR:-../dsh-api-gateway}
+      dockerfile: examples/demos/kb/Dockerfile
+      args:
+        NODE_IMAGE: ${NODE_IMAGE:-node:22-bookworm-slim}
+    image: pi-demo-kb:0.1.0
+    container_name: pi-demo-kb
+    # Same uid convention as the facade (bind mounts read/write identically).
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    environment:
+      PORT: 8101
+      GW_BASE: http://facade:3091
+      GW_KEY: ${PI_FACADE_API_KEYS:-}
+      KB_ROOT: /kb                 # BFF-side mount of ./workspaces/kb
+      AGENT_CWD: /workspace/kb     # facade-side path of the same tree
+      SEED_DIR: /pi-seed           # pi-api-facade persona (overrides the baked gateway seed)
+      SEED_DOCS: /pi-docs          # pi-api-facade docs (overrides the baked gateway docs)
+    volumes:
+      - ./workspaces/kb:/kb
+      - ./examples/demos/seed/kb:/pi-seed:ro
+      - ./examples/demos/seed-docs:/pi-docs:ro
+    restart: unless-stopped
+    networks: [api]
+
+  cs-demo:
+    build:
+      context: ${GATEWAY_DIR:-../dsh-api-gateway}
+      dockerfile: examples/demos/cs/Dockerfile
+      args:
+        NODE_IMAGE: ${NODE_IMAGE:-node:22-bookworm-slim}
+    image: pi-demo-cs:0.1.0
+    container_name: pi-demo-cs
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    environment:
+      PORT: 8102
+      GW_BASE: http://facade:3091
+      GW_KEY: ${PI_FACADE_API_KEYS:-}
+      CS_ROOT: /cs                 # BFF-side mount of ./workspaces/cs (persona only)
+      AGENT_CWD: /workspace/cs     # facade-side path; the KB is read at /workspace/kb
+      SEED_DIR: /pi-seed
+    volumes:
+      - ./workspaces/cs:/cs
+      - ./examples/demos/seed/cs:/pi-seed:ro
+    restart: unless-stopped
+    networks: [api]

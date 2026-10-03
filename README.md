@@ -45,6 +45,30 @@ everything else. The facade port is not published. Session workspaces live under
 `./workspaces` (clients pass `cwd` as `/workspace/<name>`); the node's Pi home is
 the `agent-home` volume. Full walkthrough: [docs/runbook.md](./docs/runbook.md).
 
+### Web demos
+
+`examples/demos/compose.demos.yml` adds two web demos behind the same nginx front
+door — **KB Studio** (`/kb/`, knowledge-base management with an AI steward pinned
+to `workspace-write`) and a **Support widget** (`/cs/`, read-only agent grounded
+in the same knowledge base, which is this repo's own docs). The demo apps are
+single-sourced in
+[ohdsh-api-facade](https://github.com/litestartup-com/dsh-api-gateway) (the
+contract's reference implementation); the overlay only re-points them at the Pi
+facade and swaps in pi personas/doc seeds.
+
+```bash
+git clone https://github.com/litestartup-com/dsh-api-gateway ../dsh-api-gateway  # or set GATEWAY_DIR in .env
+node scripts/sync-demo-docs.mjs
+mkdir -p workspaces/kb workspaces/cs
+docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml up -d --build
+DEMO_BASE=http://127.0.0.1:8090 node scripts/demo-smoke.mjs
+```
+
+Pi-runtime degradations vs the DSH stack (honest, documented): question cards do
+not appear until the `ask_user` bridge lands (the agent asks clarifications in
+plain reply text), and approval cards fire only in the danger tier — so the KB
+demo's auto-approve policy is a no-op here (the sandbox pin is the real guard).
+
 ## Quick start (bare process)
 
 ```bash

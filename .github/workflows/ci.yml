@@ -50,3 +50,40 @@ jobs:
       - name: Tear down
         if: always()
         run: docker compose down -v
+
+  demos-stack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The demo BFFs/UI are single-sourced in the gateway repo; the overlay
+      # builds them from this checkout (see examples/demos/compose.demos.yml).
+      - uses: actions/checkout@v4
+        with:
+          repository: litestartup-com/dsh-api-gateway
+          path: gateway-src
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/sync-demo-docs.mjs
+      - name: Boot base + demos overlay (fake engine, no secrets needed)
+        run: |
+          mkdir -p workspaces/kb workspaces/cs
+          printf 'PI_FACADE_ENGINE=fake\nPI_FACADE_API_KEYS=ci-smoke-key\nHTTP_PORT=8090\nFACADE_VERSION=ci\nGATEWAY_DIR=./gateway-src\n' > .env
+          docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml up -d --build
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8090/kb/api/health >/dev/null 2>&1 && curl -fsS http://127.0.0.1:8090/cs/api/health >/dev/null 2>&1; then
+              echo "demos healthy behind nginx"; exit 0
+            fi
+            sleep 3
+          done
+          echo "demos never became healthy" >&2; exit 1
+      - name: Demo smoke (pages, file CRUD, doc sync, chat rounds over SSE)
+        run: DEMO_BASE=http://127.0.0.1:8090 node scripts/demo-smoke.mjs
+      - name: Stack logs (on failure)
+        if: failure()
+        run: docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml logs --tail=80
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml down -v

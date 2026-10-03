@@ -189,6 +189,37 @@ test("respond for an unknown rpcId is not-pending; envelopes must be client-resp
   assert.equal(bad.status, 400);
 });
 
+test("approval vocabulary: cancelled and unavailable are accepted outcomes (D0 finding G3)", async () => {
+  // The DSH host accepts allowed-once | rejected | cancelled | unavailable
+  // (facade-client.mjs documents the four; 'unavailable' is the fail-closed
+  // headless outcome). Anything but allowed-once must block the tool.
+  for (const outcome of ["cancelled", "unavailable"]) {
+    const gate = cards.requestApproval({
+      sessionId: `s-${outcome}`,
+      approvalId: `ap-${outcome}`,
+      toolName: "bash",
+      callId: null,
+      reason: null,
+    });
+    // Find the minted rpcId through the recovery surface.
+    let rpcId = "";
+    for (let i = 0; i < 50 && rpcId === ""; i++) {
+      const listRes = await fetch(`${base}${config.prefix}/answerer/pending`, { headers: { "x-api-key": KEY } });
+      const body = (await listRes.json()) as { pending: Array<{ rpcId: string; payload: { sessionId?: string } }> };
+      rpcId = body.pending.find((p) => p.payload["sessionId"] === `s-${outcome}`)?.rpcId ?? "";
+      if (rpcId === "") await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    assert.ok(rpcId !== "", `card for ${outcome} is recoverable`);
+    const res = await fetch(`${base}${config.prefix}/respond`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": KEY },
+      body: JSON.stringify({ type: "client-response", rpcId, result: { ok: true, value: { sessionId: `s-${outcome}`, approvalId: `ap-${outcome}`, outcome } } }),
+    });
+    assert.deepEqual(await res.json(), { accepted: true }, `${outcome} is a valid outcome`);
+    assert.equal(await gate, outcome, `the gate resolves as ${outcome} (blocking)`);
+  }
+});
+
 test("card TTL expiry resolves the gate as expired and broadcasts the resolved frame", async () => {
   const seen: Array<Record<string, unknown>> = [];
   const shortTable = new CardTable((payload) => seen.push(payload as unknown as Record<string, unknown>), 60);

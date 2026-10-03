@@ -365,7 +365,11 @@ export class SdkPiEngine implements PiEngine {
                       reason: summarizeInput(event.input),
                     });
                     if (outcome === "allowed-once") return {};
-                    return { block: true, reason: `the operator ${outcome} this tool call` };
+                    const reason =
+                      outcome === "unavailable"
+                        ? "no operator was available to approve this tool call"
+                        : `the operator ${outcome} this tool call`;
+                    return { block: true, reason };
                   });
                 },
               },

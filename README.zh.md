@@ -41,6 +41,27 @@ nginx 前门监听 `HTTP_PORT`（默认 **8090**，刻意避开 DAC 生产面）
 `./workspaces`（客户端 session.create 传 `cwd=/workspace/<名字>`）；节点的 Pi
 数据目录是 `agent-home` 卷。完整手册见 [docs/runbook.md](./docs/runbook.md)。
 
+### 网页 demo
+
+`examples/demos/compose.demos.yml` 在同一个 nginx 前门后叠加两个网页 demo——
+**KB Studio**（`/kb/`，知识库管理，AI 管理员会话钉 `workspace-write` 档）与
+**智能客服**（`/cs/`，基于同一知识库的只读客服；知识库即本仓库文档）。demo
+应用单一真相源在
+[ohdsh-api-facade](https://github.com/litestartup-com/dsh-api-gateway)（契约的
+参考实现），本 overlay 只把它们指向 Pi 门面、并换上 pi 人格/文档种子。
+
+```bash
+git clone https://github.com/litestartup-com/dsh-api-gateway ../dsh-api-gateway  # 或在 .env 里设 GATEWAY_DIR
+node scripts/sync-demo-docs.mjs
+mkdir -p workspaces/kb workspaces/cs
+docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml up -d --build
+DEMO_BASE=http://127.0.0.1:8090 node scripts/demo-smoke.mjs
+```
+
+Pi 运行时相对 DSH 栈的降级（诚实口径）：`ask_user` 桥落地前没有问题卡（agent
+用正文提问）；审批卡只在 danger 档触发——KB demo 的自动放行策略在 Pi 栈上是
+空转（真正的护栏是沙箱钉档，与 DSH 同理）。
+
 ## 快速开始（裸进程）
 
 ```bash
