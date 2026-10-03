@@ -1,0 +1,35 @@
+# systemd unit example for one pi-api-facade node (Linux).
+#
+# Install:
+#   sudo cp deploy/pi-api-facade.service.example /etc/systemd/system/pi-api-facade.service
+#   sudo mkdir -p /etc/pi-api-facade
+#   printf 'DEEPSEEK_API_KEY=...\nPI_FACADE_API_KEYS=...\n' | sudo tee /etc/pi-api-facade/env >/dev/null
+#   sudo chmod 600 /etc/pi-api-facade/env
+#   sudo systemctl daemon-reload && sudo systemctl enable --now pi-api-facade
+#
+# The workspace directories (one git repo per DAC workspace) are created and
+# owned outside this unit; the audit hook commits as the service user.
+
+[Unit]
+Description=pi-api-facade (DAC Pi node)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=dac
+WorkingDirectory=/opt/pi-api-facade
+EnvironmentFile=/etc/pi-api-facade/env
+Environment=PI_FACADE_ENGINE=sdk
+Environment=PI_FACADE_HOST=127.0.0.1
+Environment=PI_FACADE_PORT=3091
+Environment=PI_AGENT_DIR=/var/lib/pi-api-facade/agent
+Environment=PI_FACADE_MODEL=deepseek/deepseek-flash
+ExecStart=/usr/bin/node src/index.ts
+Restart=always
+RestartSec=3
+# Sessions persist under PI_AGENT_DIR; a restart cold-resumes them on the next
+# prompt. Open approval cards are in-memory and intentionally not persisted.
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,208 @@
+{
+  "clientRequest": {
+    "type": "client-request",
+    "rpcId": "upstream-1790950796720-1",
+    "method": "session.create",
+    "payload": { "cwd": "/srv/dac/workspaces/pi01" }
+  },
+  "serverResponseOk": {
+    "type": "server-response",
+    "rpcId": "upstream-1790950796720-1",
+    "result": {
+      "ok": true,
+      "value": {
+        "sessionId": "01a0fcfc-6c86-7723-b45b-c33c5598771a",
+        "agentPreset": null,
+        "provider": "deepseek",
+        "model": "deepseek-flash"
+      }
+    }
+  },
+  "serverResponseError": {
+    "type": "server-response",
+    "rpcId": "upstream-1790950796720-2",
+    "result": {
+      "ok": false,
+      "error": { "code": "method_not_migrated", "message": "session.rename is not implemented by pi-api-facade", "details": null }
+    }
+  },
+  "promptRequest": {
+    "type": "client-request",
+    "rpcId": "upstream-1790950796720-3",
+    "method": "session.prompt",
+    "payload": {
+      "sessionId": "01a0fcfc-6c86-7723-b45b-c33c5598771a",
+      "mode": "queue",
+      "content": [{ "type": "text", "text": "Reply with exactly one word: PONG" }]
+    }
+  },
+  "respondApprovalAllow": {
+    "type": "client-response",
+    "rpcId": "fac-1790950800000-7",
+    "result": {
+      "ok": true,
+      "value": {
+        "sessionId": "01a0fcfc-6c86-7723-b45b-c33c5598771a",
+        "approvalId": "ap-1",
+        "outcome": "allowed-once"
+      }
+    }
+  },
+  "respondQuestionDecline": {
+    "type": "client-response",
+    "rpcId": "fac-1790950800000-8",
+    "result": {
+      "ok": false,
+      "error": { "code": "cancelled", "message": "the user cancelled ask_user_question", "details": { "sessionId": "01a0fcfc-6c86-7723-b45b-c33c5598771a" } }
+    }
+  },
+  "respondReceiptAccepted": { "accepted": true },
+  "respondReceiptNotPending": { "accepted": false, "reason": "not-pending" },
+  "muxSessionEventChunk": {
+    "type": "server-request",
+    "rpcId": "",
+    "method": "session/event",
+    "payload": {
+      "type": "session/event",
+      "sessionId": "01a0fcfc-6c86-7723-b45b-c33c5598771a",
+      "event": { "type": "assistant/chunk", "seq": 12, "data": { "chunk": { "type": "text-delta", "text": "PO" } } }
+    }
+  },
+  "muxSessionEventAssistantMessage": {
+    "type": "server-request",
+    "rpcId": "",
+    "method": "session/event",
+    "payload": {
+      "type": "session/event",
+      "sessionId": "01a0fcfc-6c86-7723-b45b-c33c5598771a",
+      "event": {
+        "type": "assistant/message",
+        "seq": 14,
+        "data": {
+          "message": { "content": [{ "type": "text", "text": "PONG" }] },
+          "usage": { "inputTokens": 453, "outputTokens": 2, "cacheReadTokens": 0, "cacheWriteTokens": 0, "reasoningTokens": 0 }
+        }
+      }
+    }
+  },
+  "muxSessionEventTurnEnd": {
+    "type": "server-request",
+    "rpcId": "",
+    "method": "session/event",
+    "payload": {
+      "type": "session/event",
+      "sessionId": "01a0fcfc-6c86-7723-b45b-c33c5598771a",
+      "event": { "type": "turn/end", "seq": 15, "data": { "turn": 1, "reason": { "kind": "completed" } } }
+    }
+  },
+  "muxApprovalRequested": {
+    "type": "server-request",
+    "rpcId": "fac-1790950800000-7",
+    "method": "approval/requested",
+    "payload": {
+      "type": "approval/requested",
+      "sessionId": "01a0fcfc-6c86-7723-b45b-c33c5598771a",
+      "approvalId": "ap-1",
+      "toolName": "bash",
+      "callId": "call-1",
+      "reason": "rm -rf /tmp/build"
+    }
+  },
+  "muxApprovalResolved": {
+    "type": "server-request",
+    "rpcId": "",
+    "method": "approval/resolved",
+    "payload": {
+      "type": "approval/resolved",
+      "sessionId": "01a0fcfc-6c86-7723-b45b-c33c5598771a",
+      "approvalId": "ap-1",
+      "outcome": "allowed-once"
+    }
+  },
+  "muxProjectionTitle": {
+    "type": "server-request",
+    "rpcId": "",
+    "method": "session/projection",
+    "payload": {
+      "type": "session/projection",
+      "sessionId": "01a0fcfc-6c86-7723-b45b-c33c5598771a",
+      "key": "title",
+      "value": "PONG round",
+      "seq": 3
+    }
+  },
+  "muxStreamError": {
+    "type": "server-request",
+    "rpcId": "",
+    "method": "stream/error",
+    "payload": { "message": "engine fatal" }
+  },
+  "sessionHistoryValue": {
+    "events": [
+      { "event": { "type": "user/message", "seq": 1, "data": { "id": "05fc64a5", "content": [{ "type": "text", "text": "Reply with exactly one word: PONG" }] } }, "view": null },
+      { "event": { "type": "turn/start", "seq": 2, "data": { "turn": 1 } }, "view": null },
+      { "event": { "type": "assistant/message", "seq": 3, "data": { "message": { "content": [{ "type": "text", "text": "PONG" }] }, "usage": { "inputTokens": 453, "outputTokens": 2 } } }, "view": null },
+      { "event": { "type": "turn/end", "seq": 4, "data": { "turn": 1, "reason": { "kind": "completed" } } }, "view": null }
+    ],
+    "hasMore": false,
+    "projections": {
+      "asOfSeq": 4,
+      "values": {
+        "title": "PONG round",
+        "contextPressure": { "projectedTokens": 455, "contextWindow": 1000000 },
+        "modelSelection": { "next": { "provider": "deepseek", "model": "deepseek-flash" } },
+        "permissions": { "currentValue": "workspace-write" }
+      }
+    }
+  },
+  "sessionListValue": {
+    "items": [
+      {
+        "sessionId": "01a0fcfc-6c86-7723-b45b-c33c5598771a",
+        "updatedAt": 1790950797140,
+        "running": false,
+        "blank": false,
+        "projections": { "values": { "title": "PONG round" } }
+      }
+    ]
+  },
+  "sessionModelsValue": {
+    "current": { "provider": "deepseek", "model": "deepseek-flash" },
+    "routable": true,
+    "groups": [
+      {
+        "id": "deepseek",
+        "name": "DeepSeek",
+        "models": [
+          { "id": "deepseek-flash", "name": "DeepSeek Flash" },
+          { "id": "deepseek-v4-pro", "name": "DeepSeek V4 Pro" }
+        ]
+      }
+    ],
+    "failures": []
+  },
+  "hostDescribeValue": {
+    "protocol": "0.0.1",
+    "runtime": "pi",
+    "version": "pi-0.87.1",
+    "allowFullAccess": false
+  },
+  "answererPending": {
+    "pending": [
+      {
+        "rpcId": "fac-1790950800000-7",
+        "method": "approval/requested",
+        "payload": {
+          "type": "approval/requested",
+          "sessionId": "01a0fcfc-6c86-7723-b45b-c33c5598771a",
+          "approvalId": "ap-1",
+          "toolName": "bash",
+          "callId": "call-1",
+          "reason": "rm -rf /tmp/build"
+        }
+      }
+    ]
+  },
+  "sandboxModeRequest": { "mode": "workspace-write" },
+  "healthValue": { "ok": true, "service": "pi-api-facade", "version": "0.1.0" }
+}

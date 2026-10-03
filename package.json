@@ -1,0 +1,48 @@
+{
+  "name": "pi-api-facade",
+  "version": "0.1.0",
+  "description": "HTTP facade exposing Pi coding agent sessions behind the frozen DAC apiproxy contract",
+  "type": "module",
+  "license": "MIT",
+  "author": "litestartup-com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/litestartup-com/pi-api-facade.git"
+  },
+  "homepage": "https://github.com/litestartup-com/pi-api-facade#readme",
+  "bugs": {
+    "url": "https://github.com/litestartup-com/pi-api-facade/issues"
+  },
+  "keywords": [
+    "pi",
+    "coding-agent",
+    "facade",
+    "dac",
+    "apiproxy",
+    "deepseek"
+  ],
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "start": "node src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "node --test \"test/**/*.test.ts\"",
+    "check": "npm run lint && npm run typecheck && npm run test"
+  },
+  "dependencies": {
+    "@earendil-works/pi-coding-agent": "0.87.1",
+    "@fastify/websocket": "11.3.1",
+    "fastify": "5.12.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "26.6.4",
+    "@types/ws": "8.18.2",
+    "eslint": "10.11.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.0",
+    "ws": "8.22.0"
+  }
+}

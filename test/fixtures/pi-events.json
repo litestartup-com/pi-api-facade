@@ -1,0 +1,33 @@
+{
+  "note": "Recorded live Pi 0.87.1 JSON-mode events (pi-lab round1.jsonl, 2026-10-02, deepseek-flash). The system message sections are trimmed; shapes are verbatim.",
+  "round": [
+    { "type": "agent_start" },
+    { "type": "turn_start" },
+    { "type": "message_start", "message": { "role": "system", "content": "", "timestamp": 1790950796731 } },
+    { "type": "message_end", "message": { "role": "system", "content": "", "timestamp": 1790950796731 } },
+    { "type": "message_start", "message": { "role": "user", "content": [{ "type": "text", "text": "Reply with exactly one word: PONG" }], "timestamp": 1790950796720 } },
+    { "type": "message_end", "message": { "role": "user", "content": [{ "type": "text", "text": "Reply with exactly one word: PONG" }], "timestamp": 1790950796720 } },
+    { "type": "message_start", "message": { "role": "assistant", "content": [], "api": "openai-completions", "provider": "deepseek", "model": "deepseek-flash", "usage": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "totalTokens": 0, "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "total": 0 } }, "stopReason": "pending", "timestamp": 1790950797140 } },
+    { "type": "message_update", "usage": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "totalTokens": 0, "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "total": 0 } }, "assistantMessageEvent": { "type": "text_start", "contentIndex": 0 } },
+    { "type": "message_update", "usage": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "totalTokens": 0, "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "total": 0 } }, "assistantMessageEvent": { "type": "text_delta", "contentIndex": 0, "delta": "P" } },
+    { "type": "message_update", "usage": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "totalTokens": 0, "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "total": 0 } }, "assistantMessageEvent": { "type": "text_delta", "contentIndex": 0, "delta": "ONG" } },
+    { "type": "message_update", "usage": { "input": 453, "output": 2, "cacheRead": 0, "cacheWrite": 0, "reasoning": 0, "totalTokens": 455, "cost": { "input": 0.0001359, "output": 0.0000024, "cacheRead": 0, "cacheWrite": 0, "total": 0.0001383 } }, "assistantMessageEvent": { "type": "text_end", "contentIndex": 0, "content": "PONG" } },
+    { "type": "message_end", "message": { "role": "assistant", "content": [{ "type": "text", "text": "PONG" }], "api": "openai-completions", "provider": "deepseek", "model": "deepseek-flash", "usage": { "input": 453, "output": 2, "cacheRead": 0, "cacheWrite": 0, "reasoning": 0, "totalTokens": 455, "cost": { "input": 0.0001359, "output": 0.0000024, "cacheRead": 0, "cacheWrite": 0, "total": 0.0001383 } }, "stopReason": "stop", "timestamp": 1790950797140, "responseId": "4c0c470a-f602-48b1-8ffc-a0e03f4eb3e5", "rawStopReason": "stop" } },
+    { "type": "turn_end", "message": { "role": "assistant", "content": [{ "type": "text", "text": "PONG" }], "stopReason": "stop" }, "toolResults": [] },
+    { "type": "agent_end", "messages": [] },
+    { "type": "agent_settled" }
+  ],
+  "abortedRound": [
+    { "type": "turn_start" },
+    { "type": "message_end", "message": { "role": "assistant", "content": [{ "type": "text", "text": "partial" }], "usage": { "input": 100, "output": 5, "cacheRead": 0, "cacheWrite": 0, "totalTokens": 105, "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "total": 0 } }, "stopReason": "aborted", "timestamp": 1790950800000 } },
+    { "type": "agent_settled" }
+  ],
+  "toolRound": [
+    { "type": "turn_start" },
+    { "type": "tool_execution_start", "toolCallId": "call-1", "toolName": "bash", "args": { "command": "ls" } },
+    { "type": "tool_execution_end", "toolCallId": "call-1", "toolName": "bash", "result": { "content": [{ "type": "text", "text": "file-a\nfile-b" }] }, "isError": false },
+    { "type": "message_end", "message": { "role": "toolResult", "toolCallId": "call-1", "toolName": "bash", "content": [{ "type": "text", "text": "file-a\nfile-b" }], "isError": false } },
+    { "type": "message_end", "message": { "role": "assistant", "content": [{ "type": "text", "text": "done" }], "usage": { "input": 50, "output": 1, "cacheRead": 0, "cacheWrite": 0, "totalTokens": 51, "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "total": 0 } }, "stopReason": "stop", "timestamp": 1790950800100 } },
+    { "type": "agent_settled" }
+  ]
+}
