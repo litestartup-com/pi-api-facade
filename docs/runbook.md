@@ -126,3 +126,4 @@ replay, pending-card surface). **It spends real tokens** — one small run.
 | Workspace `.pi` resources ignored | Headless project trust: set `{"defaultProjectTrust":"always"}` in `<PI_AGENT_DIR>/settings.json`. |
 | No audit commits | Workspace is not a git repo, the run left no changes (clean runs never commit), or `git` is missing on PATH (hook failures are logged, never fatal). |
 | Chat hangs with no frames | Check the facade is on the pinned Pi version and the model credential works; run the smoke script. The manager's silence backstop (5 min) cancels the turn loudly. |
+| Demo BFFs crash-loop with EACCES on `/kb` or `/cs` (Linux) | Bind-mount uid mismatch: set `HOST_UID=$(id -u)` / `HOST_GID=$(id -g)` in `.env` so containers run as the user owning `./workspaces` (GitHub runners are uid 1001, not 1000 — CI sets this explicitly). |

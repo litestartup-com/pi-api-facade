@@ -34,7 +34,7 @@ jobs:
         run: |
           mkdir -p workspaces
           printf 'PI_FACADE_ENGINE=fake\nPI_FACADE_API_KEYS=ci-smoke-key\nHTTP_PORT=8090\nFACADE_VERSION=ci\n' > .env
-          docker compose up -d
+          docker compose up -d --build
           for i in $(seq 1 40); do
             if curl -fsS http://127.0.0.1:8090/api-gw/v1/health >/dev/null 2>&1; then
               echo "facade healthy behind nginx"; exit 0
@@ -69,7 +69,18 @@ jobs:
       - run: node scripts/sync-demo-docs.mjs
       - name: Validate the merged compose config (fail fast on merge/interp errors)
         run: |
-          printf 'PI_FACADE_ENGINE=fake\nPI_FACADE_API_KEYS=ci-smoke-key\nHTTP_PORT=8090\nFACADE_VERSION=ci\nGATEWAY_DIR=./gateway-src\n' > .env
+          # HOST_UID/HOST_GID must match the user that owns ./workspaces — GitHub
+          # runners are uid 1001, and a container pinned to 1000 gets EACCES on
+          # the bind mounts (the demo BFFs seed their workspaces at boot).
+          {
+            echo "PI_FACADE_ENGINE=fake"
+            echo "PI_FACADE_API_KEYS=ci-smoke-key"
+            echo "HTTP_PORT=8090"
+            echo "FACADE_VERSION=ci"
+            echo "GATEWAY_DIR=./gateway-src"
+            echo "HOST_UID=$(id -u)"
+            echo "HOST_GID=$(id -g)"
+          } > .env
           docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml config --quiet
       - name: Boot base + demos overlay (fake engine, no secrets needed)
         run: |
