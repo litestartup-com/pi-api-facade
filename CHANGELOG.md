@@ -5,6 +5,20 @@ Format follows Keep a Changelog; versions follow SemVer.
 
 ## [Unreleased]
 
+### Added
+
+- Standalone docker stack (D1): thin runtime image (`docker/Dockerfile` —
+  node + git/ripgrep, non-root, healthcheck; nginx/demo never enter it per the
+  deployment red line), `docker-compose.yml` mirroring the proven gateway
+  topology (nginx front door on HTTP_PORT 8090, facade port unpublished,
+  locations.d add-on hook, agent-home volume, workspaces bind mount, China
+  mirror envs), fail-closed entrypoint (boots only with keys; seeds
+  `defaultProjectTrust: always`), `.env.example`, `.dockerignore`,
+  `openapi.yaml` for the northbound surface, and `scripts/compose-smoke.mjs`
+  (fake-engine wiring smoke) wired into CI as a compose-up job.
+- `health` now also reports `status` and `upstream` fields (demo-BFF probe
+  parity — finding G2 of the standalone-plan D0 survey).
+
 ## [0.1.0] - 2026-10-03
 
 First accepted release: verified end to end against a production DAC manager

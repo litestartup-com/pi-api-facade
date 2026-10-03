@@ -27,7 +27,21 @@ DAC manager ──(冻结 apiproxy 契约, HTTP/WS)──> pi-api-facade（本�
   `createAgentSession`，版本由 DAC 版本矩阵钉死）。一个门卫进程并发承载
   一个节点的全部会话。
 
-## 快速开始
+## 快速开始（Docker 独立栈）
+
+```bash
+cp .env.example .env         # 填 DEEPSEEK_API_KEY + PI_FACADE_API_KEYS（openssl rand -hex 16）
+mkdir -p workspaces
+docker compose up -d --build
+node scripts/compose-smoke.mjs   # 接线自检（FACADE_URL/FACADE_KEY 见脚本头注释）
+```
+
+nginx 前门监听 `HTTP_PORT`（默认 **8090**，刻意避开 DAC 生产面），是唯一对外
+端口：只代理 `/api-gw/`，其余一律 404；门面端口不发布。会话工作区在
+`./workspaces`（客户端 session.create 传 `cwd=/workspace/<名字>`）；节点的 Pi
+数据目录是 `agent-home` 卷。完整手册见 [docs/runbook.md](./docs/runbook.md)。
+
+## 快速开始（裸进程）
 
 ```bash
 npm install
@@ -68,11 +82,17 @@ provider（无密钥、不出网）。CI：`.github/workflows/ci.yml`。
 
 - [docs/runbook.md](./docs/runbook.md) —— 首次启动、manager 接线（含**必做的
   记账钉版**）、smoke 验证、重启/升级/回滚、排障表。
+- [openapi.yaml](./openapi.yaml) —— 北向面的 OpenAPI 3 文档（mux WebSocket
+  在 info 描述里注明）。
+- `docker/` + `docker-compose.yml` —— 独立栈（薄运行镜像；nginx 前门；
+  `PI_FACADE_ENGINE=fake` 接线测试模式）。
 - `scripts/start-facade.ps1` —— Windows 启动器（节点级 agent 目录、project
   trust 预置、密钥处理）。
 - `deploy/pi-api-facade.service.example` —— Linux 节点的 systemd 单元。
 - `scripts/smoke-facade.mjs` —— 对运行中门面的 wire 级 smoke（真实 provider，
   花 token，仅手动）。
+- `scripts/compose-smoke.mjs` —— compose 栈的 fake 引擎接线 smoke（不花
+  token，可进 CI）。
 - [docs/contract-map.md](./docs/contract-map.md) —— 冻结契约逐端点对照，
   全部引用 manager 消费端源码。
 

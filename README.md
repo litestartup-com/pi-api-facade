@@ -30,7 +30,22 @@ DAC manager ──(frozen apiproxy contract, HTTP/WS)──> pi-api-facade (this
   `@earendil-works/pi-coding-agent`, version pinned by the DAC version matrix).
   One facade process hosts all sessions of one node concurrently.
 
-## Quick start
+## Quick start (Docker, standalone stack)
+
+```bash
+cp .env.example .env         # fill DEEPSEEK_API_KEY + PI_FACADE_API_KEYS (openssl rand -hex 16)
+mkdir -p workspaces
+docker compose up -d --build
+node scripts/compose-smoke.mjs   # wiring check (needs FACADE_URL/FACADE_KEY env; see script header)
+```
+
+The nginx front door on `HTTP_PORT` (default **8090**, deliberately clear of the
+DAC production surface) is the only external port; it proxies `/api-gw/` and 404s
+everything else. The facade port is not published. Session workspaces live under
+`./workspaces` (clients pass `cwd` as `/workspace/<name>`); the node's Pi home is
+the `agent-home` volume. Full walkthrough: [docs/runbook.md](./docs/runbook.md).
+
+## Quick start (bare process)
 
 ```bash
 npm install
@@ -73,11 +88,17 @@ commit; dependencies pinned to exact versions; commit messages in English.
 - [docs/runbook.md](./docs/runbook.md) — first boot, manager wiring (including
   the mandatory billing pin), smoke verification, restart/upgrade/rollback,
   troubleshooting.
+- [openapi.yaml](./openapi.yaml) — the northbound surface as an OpenAPI 3
+  document (the mux WebSocket is annotated in the info description).
+- `docker/` + `docker-compose.yml` — the standalone stack (thin runtime image;
+  nginx front door; `PI_FACADE_ENGINE=fake` mode for wiring tests).
 - `scripts/start-facade.ps1` — Windows launcher (per-node agent home, project
   trust seeding, key handling).
 - `deploy/pi-api-facade.service.example` — systemd unit for Linux nodes.
 - `scripts/smoke-facade.mjs` — wire-level smoke against a running facade with
   a real provider (spends tokens; manual only).
+- `scripts/compose-smoke.mjs` — fake-engine wiring smoke for the compose stack
+  (no tokens, CI-safe).
 - [docs/contract-map.md](./docs/contract-map.md) — the frozen contract,
   endpoint by endpoint, cited against the manager's consumer code.
 

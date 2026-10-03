@@ -43,6 +43,10 @@ test("GET {prefix}/health responds 200 without auth", async () => {
   assert.equal(body["ok"], true);
   assert.equal(body["service"], "pi-api-facade");
   assert.equal(body["version"], serviceVersion);
+  // Demo-BFF parity (D0 finding G2): probes render `${status}/${upstream}`.
+  assert.equal(body["status"], "ok");
+  assert.equal(typeof body["upstream"], "string");
+  assert.match(String(body["upstream"]), /^pi-/);
 });
 
 test("unknown paths 404 (no accidental route exposure)", async () => {

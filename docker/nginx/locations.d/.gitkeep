@@ -1,0 +1,2 @@
+# Empty in the base stack. The examples/demos compose overlay replaces this
+# mount with its own location files (nginx includes *.conf from here).

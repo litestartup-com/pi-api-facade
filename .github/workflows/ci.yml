@@ -18,3 +18,35 @@ jobs:
       # The whole gate is offline: unit tests use the fake engine, integration
       # tests use a scripted local stub provider (no keys, no external calls).
       - run: npm run check
+
+  docker-stack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Build the thin runtime image
+        run: docker build -f docker/Dockerfile -t pi-api-facade:ci .
+      - name: Boot the compose stack (fake engine, no secrets needed)
+        run: |
+          mkdir -p workspaces
+          printf 'PI_FACADE_ENGINE=fake\nPI_FACADE_API_KEYS=ci-smoke-key\nHTTP_PORT=8090\nFACADE_VERSION=ci\n' > .env
+          docker compose up -d
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:8090/api-gw/v1/health >/dev/null 2>&1; then
+              echo "facade healthy behind nginx"; exit 0
+            fi
+            sleep 2
+          done
+          echo "facade never became healthy" >&2; exit 1
+      - name: Wiring smoke through the nginx front door
+        run: FACADE_URL=http://127.0.0.1:8090 FACADE_KEY=ci-smoke-key node scripts/compose-smoke.mjs
+      - name: Stack logs (on failure)
+        if: failure()
+        run: docker compose logs --tail=80
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

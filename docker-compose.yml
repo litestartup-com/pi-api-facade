@@ -1,0 +1,71 @@
+# Standalone Pi API stack: nginx (front door) + facade (Pi SDK engine).
+#
+# Usage:
+#   cp .env.example .env       # fill DEEPSEEK_API_KEY + PI_FACADE_API_KEYS
+#   mkdir -p workspaces        # session workspaces (bind mount, host-visible)
+#   docker compose up -d --build
+#   node scripts/compose-smoke.mjs          # wiring acceptance (fake-engine safe)
+#   FACADE_URL=http://127.0.0.1:${HTTP_PORT:-8090} FACADE_KEY=<key> SMOKE_CWD=<abs workspace> \
+#     node scripts/smoke-facade.mjs          # real-provider round (spends tokens)
+#
+# The facade port is NOT published: nginx on ${HTTP_PORT} is the only external
+# surface, and it proxies /api-gw/ only (everything else 404 — see
+# docker/nginx/pi-facade.conf). Default HTTP_PORT=8090 deliberately avoids the
+# DAC production surface (8080 manager / 3081-3091 nodes).
+name: pi-api
+
+services:
+  nginx:
+    # No nginx:alpine cache on the host? Set NGINX_IMAGE in .env (e.g.
+    # docker.m.daocloud.io/library/nginx:alpine for China).
+    image: ${NGINX_IMAGE:-nginx:alpine}
+    container_name: pi-api-nginx
+    ports:
+      - "${HTTP_PORT:-8090}:80"
+    volumes:
+      - ./docker/nginx/pi-facade.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./docker/nginx/locations.d:/etc/nginx/conf.d/locations.d:ro
+    depends_on:
+      facade:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [api]
+
+  facade:
+    build:
+      # Context = repo root: the image runs the facade from THIS checkout.
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        NODE_IMAGE: ${NODE_IMAGE:-node:24-bookworm-slim}
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org}
+    image: pi-api-facade:${FACADE_VERSION:-0.1.0}
+    container_name: pi-api-facade
+    # Same uid as the host deploy user so the ./workspaces bind mount reads and
+    # writes identically on both sides. HOST_UID/HOST_GID come from .env.
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    environment:
+      PI_FACADE_ENGINE: ${PI_FACADE_ENGINE:-sdk}
+      PI_FACADE_API_KEYS: ${PI_FACADE_API_KEYS:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      PI_FACADE_MODEL: ${PI_FACADE_MODEL:-deepseek/deepseek-flash}
+      PI_FACADE_ALLOW_FULL_ACCESS: ${PI_FACADE_ALLOW_FULL_ACCESS:-}
+    volumes:
+      # The node's Pi home: auth.json, models.json, settings.json, session JSONL.
+      # One volume per node — never share between nodes.
+      - agent-home:/data
+      # Session workspaces. Clients pass cwd under /workspace to session.create
+      # (e.g. /workspace/my-kb); the same tree is ./workspaces on the host.
+      - ./workspaces:/workspace
+    # Debug only — reach the facade directly on the host loopback:
+    # ports:
+    #   - "127.0.0.1:3091:3091"
+    restart: unless-stopped
+    networks: [api]
+
+volumes:
+  agent-home:
+
+networks:
+  api:
+    name: pi-api

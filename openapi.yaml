@@ -1,0 +1,235 @@
+openapi: 3.0.3
+info:
+  title: pi-api-facade — frozen DAC apiproxy contract (Pi runtime)
+  version: 0.1.0
+  description: |
+    Northbound HTTP surface of pi-api-facade. The wire is the frozen apiproxy
+    contract also implemented by ohdsh-api-facade (DSH runtime); the manager's
+    consumer code is the source of truth. Full annotations, frame shapes and
+    the session-event vocabulary: `docs/contract-map.md`.
+
+    Conventions:
+    - Business outcomes always ride HTTP 200 inside the server-response envelope
+      (`result.ok`). Non-200 means a carrier-level failure (unknown route 404,
+      malformed envelope 400, whitelist rejection 403, auth 401).
+    - The mux WebSocket (`GET {prefix}/proxy/events.mux`) cannot be expressed in
+      OpenAPI; see contract-map §4. Envelope: `{type:"server-request", rpcId,
+      method, payload}` with `method = payload.type`; downstream-only (any client
+      data frame closes the socket with 1008).
+  license:
+    name: MIT
+servers:
+  - url: http://127.0.0.1:8090/api-gw/v1
+    description: Standalone compose stack (nginx front door)
+  - url: http://127.0.0.1:3091/api-gw/v1
+    description: Bare facade (default port)
+security:
+  - ApiKeyAuth: []
+paths:
+  /health:
+    get:
+      summary: Liveness probe (unauthenticated)
+      security: []
+      responses:
+        "200":
+          description: The facade is listening.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  status: { type: string, example: ok }
+                  service: { type: string, example: pi-api-facade }
+                  version: { type: string, example: 0.1.0 }
+                  upstream: { type: string, example: pi-0.87.1 }
+  /key:
+    post:
+      summary: One-time self-provision (permanently closed on this facade)
+      description: Keys are environment-provisioned (PI_FACADE_API_KEYS); this endpoint always answers 409.
+      responses:
+        "409":
+          description: Provisioning disabled.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string, example: provisioning_disabled }
+                  message: { type: string }
+  /proxy/{method}:
+    post:
+      summary: Unary RPC (client-request envelope in, server-response envelope out)
+      description: |
+        Whitelisted methods: session.list, session.create, session.history,
+        session.prompt, session.cancel, session.rename, session.fork,
+        session.updateQueue, session.attachment, session.models,
+        session.selectModel, host.describe. This facade implements the first
+        five plus session.models / session.selectModel / host.describe; the
+        rest answer `method_not_migrated` (honest 501-style business error).
+        Methods outside the whitelist get carrier-level 403. The envelope
+        `method` must equal the path method. Per-method payload/value shapes:
+        contract-map §3.
+      parameters:
+        - name: method
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClientRequest" }
+      responses:
+        "200":
+          description: Business outcome (ok or error) inside the envelope.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ServerResponse" }
+        "400": { description: Malformed envelope, or envelope/path method mismatch. }
+        "401": { description: Missing or wrong x-api-key. The body never contains the string "provisions a key". }
+        "403": { description: Method outside the whitelist (method_not_allowed). }
+  /respond:
+    post:
+      summary: Answer a pending question/approval card
+      description: |
+        Also mounted at `/proxy/respond` (the manager derives it from its rpc
+        base). Body: `{type:"client-response", rpcId, result}` where `result`
+        is `{ok:true,value}` or `{ok:false,error:{code,message}}`. Approval
+        value: `{sessionId, approvalId, outcome}` with outcome in
+        allowed-once|rejected|cancelled|unavailable (anything but allowed-once
+        blocks the tool). Question decline: `ok:false` with `error.code =
+        "cancelled"`. Matching is strict: rpcId, then sessionId + approvalId —
+        a mismatch answers not-pending, never a guess.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClientResponse" }
+      responses:
+        "200":
+          description: Receipt.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Receipt" }
+        "400": { description: Not a client-response envelope. }
+        "401": { description: Missing or wrong x-api-key. }
+  /answerer/pending:
+    get:
+      summary: Pending card recovery (original frame payloads, verbatim)
+      responses:
+        "200":
+          description: Cards still waiting for an answer.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pending:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        rpcId: { type: string }
+                        method: { type: string, enum: [approval/requested, question/requested] }
+                        payload: { type: object }
+        "401": { description: Missing or wrong x-api-key. }
+  /sessions/{id}/sandbox-mode:
+    post:
+      summary: Pin a live session's sandbox tier
+      description: |
+        Modes: read-only (tools reduced to read/grep/find/ls — bash is removed
+        because Pi cannot constrain a shell), workspace-write (all built-ins),
+        danger-full-access (all built-ins plus the approval-card gate; requires
+        host.describe.allowFullAccess). Live sessions only.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mode]
+              properties:
+                mode:
+                  type: string
+                  enum: [read-only, workspace-write, danger-full-access]
+      responses:
+        "200": { description: Pinned. }
+        "400": { description: Missing/unknown mode. }
+        "401": { description: Missing or wrong x-api-key. }
+        "403": { description: danger-full-access requested but the node has not unlocked it. }
+        "409": { description: Session is not live (session_not_live). }
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+  schemas:
+    ClientRequest:
+      type: object
+      required: [type, method]
+      properties:
+        type: { type: string, enum: [client-request] }
+        rpcId: { type: string }
+        method: { type: string }
+        payload: { type: object }
+    ClientResponse:
+      type: object
+      required: [type, rpcId, result]
+      properties:
+        type: { type: string, enum: [client-response] }
+        rpcId: { type: string }
+        result:
+          oneOf:
+            - type: object
+              required: [ok, value]
+              properties:
+                ok: { type: boolean, enum: [true] }
+                value: {}
+            - type: object
+              required: [ok, error]
+              properties:
+                ok: { type: boolean, enum: [false] }
+                error:
+                  type: object
+                  required: [code, message]
+                  properties:
+                    code: { type: string }
+                    message: { type: string }
+                    details: {}
+    ServerResponse:
+      type: object
+      required: [type, result]
+      properties:
+        type: { type: string, enum: [server-response] }
+        rpcId: { type: string }
+        result:
+          oneOf:
+            - type: object
+              required: [ok, value]
+              properties:
+                ok: { type: boolean, enum: [true] }
+                value: {}
+            - type: object
+              required: [ok, error]
+              properties:
+                ok: { type: boolean, enum: [false] }
+                error:
+                  type: object
+                  required: [code, message]
+                  properties:
+                    code: { type: string }
+                    message: { type: string }
+                    details: {}
+    Receipt:
+      type: object
+      required: [accepted]
+      properties:
+        accepted: { type: boolean }
+        reason: { type: string, enum: [not-pending, bad-response] }

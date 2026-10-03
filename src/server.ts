@@ -45,10 +45,14 @@ export const buildServer = async (config: FacadeConfig, engine: PiEngine, servic
     reply.code(401).send({ error: "unauthorized" });
 
   // Unauthenticated liveness probe (contract: GET {prefix}/health).
+  // `status`/`upstream` mirror the dsh-api-gateway health shape that demo BFFs
+  // render ("${status}/${upstream}"); ok/service/version are this facade's own.
   app.get(`${config.prefix}/health`, async () => ({
     ok: true,
+    status: "ok",
     service: "pi-api-facade",
     version: serviceVersion,
+    upstream: engine.hostDescribe().version,
   }));
 
   // Self-provisioning is permanently closed: keys are environment-provisioned.
