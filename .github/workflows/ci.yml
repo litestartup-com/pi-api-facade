@@ -55,11 +55,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # The demo BFFs/UI are single-sourced in the gateway repo; the overlay
-      # builds them from this checkout (see examples/demos/compose.demos.yml).
+      # The demo BFFs/UI and the conformance kit are single-sourced in the
+      # gateway repo; the overlay builds them from this checkout. Pinned by
+      # commit for reproducibility — bump deliberately, never float.
       - uses: actions/checkout@v4
         with:
           repository: litestartup-com/dsh-api-gateway
+          ref: ce1ec1e33149fe2d1e2d36864c3c3a1c3ad30b04
           path: gateway-src
       - uses: actions/setup-node@v4
         with:
@@ -110,6 +112,15 @@ jobs:
           exit 1
       - name: Demo smoke (pages, file CRUD, doc sync, chat rounds over SSE)
         run: DEMO_BASE=http://127.0.0.1:8090 node scripts/demo-smoke.mjs
+      # The same conformance suite the gateway repo runs against its own live
+      # stack — here against the Pi facade through the front door. The fake
+      # engine answers prompts for free, so the full turn (billing invariant
+      # included) runs in CI.
+      - name: Conformance kit (frozen-contract intersection)
+        run: |
+          mkdir -p workspaces/conformance
+          SMOKE_BASE=http://127.0.0.1:8090 SMOKE_KEY=ci-smoke-key RUN_PROMPT=1 \
+            node gateway-src/conformance/conformance.mjs --cwd /workspace/conformance
       - name: Stack logs (on failure)
         if: failure()
         run: docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml logs --tail=80

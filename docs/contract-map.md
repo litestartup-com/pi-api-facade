@@ -332,3 +332,10 @@ Response:
 3. No goal projection, no context breakdown (both render as absent).
 4. History is full-replay, `hasMore:false` always.
 5. Pending-card table is in-memory (restart loses open cards).
+6. `session.list` shows a session only after its first message: Pi writes the
+   session JSONL lazily — `_persist()` skips the flush until a user/assistant
+   message exists (upstream `session-manager.ts`, deliberate: "opening and
+   closing pi without chatting leaves no file behind"). A created-but-never-
+   prompted session is therefore invisible to `listAll`. Benign for the
+   manager (list is off the create→prompt path); the conformance kit asserts
+   containment only post-run.

@@ -7,6 +7,14 @@ Format follows Keep a Changelog; versions follow SemVer.
 
 ### Added
 
+- Cross-implementation conformance (D4): the gateway repo now hosts
+  `conformance/conformance.mjs` — one zero-dependency suite asserting the
+  intersection both facades guarantee (carrier codes, envelope invariants,
+  sandbox semantics, the mux downstream-only rule, and with `RUN_PROMPT=1`
+  the billing invariant). This repo's CI runs it against the Pi facade
+  through the front door (gateway checkout pinned by commit); the gateway's
+  CI runs the same file against its live stack. Verified against the real
+  facade in both modes (17/18 checks, real-model turn included).
 - Question cards via the `ask_user` bridge (D3): Pi has no built-in question
   surface, so the facade registers an `ask_user` custom tool (TypeBox schema:
   questions with id/text/options/multiSelect — the manager card UI's shape).

@@ -116,6 +116,8 @@ provider（无密钥、不出网）。CI：`.github/workflows/ci.yml`。
   token，可进 CI）。
 - [docs/contract-map.md](./docs/contract-map.md) —— 冻结契约逐端点对照，
   全部引用 manager 消费端源码。
+- 跨实现**一致性套件**在 gateway 仓（`conformance/`，CI 按 commit 钉版）：
+  同一套断言两个门面都必须过——它红了就说明两种运行时在冻结契约上漂移了。
 
 ## 许可证
 

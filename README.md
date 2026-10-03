@@ -125,6 +125,9 @@ commit; dependencies pinned to exact versions; commit messages in English.
   (no tokens, CI-safe).
 - [docs/contract-map.md](./docs/contract-map.md) — the frozen contract,
   endpoint by endpoint, cited against the manager's consumer code.
+- The cross-implementation **conformance kit** lives in the gateway repo
+  (`conformance/`, pinned by commit in CI): one suite both facades must pass —
+  red there means the runtimes drifted apart on the frozen contract.
 
 ## License
 
