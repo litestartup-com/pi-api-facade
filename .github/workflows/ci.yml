@@ -67,10 +67,13 @@ jobs:
           cache: npm
       - run: npm ci
       - run: node scripts/sync-demo-docs.mjs
+      - name: Validate the merged compose config (fail fast on merge/interp errors)
+        run: |
+          printf 'PI_FACADE_ENGINE=fake\nPI_FACADE_API_KEYS=ci-smoke-key\nHTTP_PORT=8090\nFACADE_VERSION=ci\nGATEWAY_DIR=./gateway-src\n' > .env
+          docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml config --quiet
       - name: Boot base + demos overlay (fake engine, no secrets needed)
         run: |
           mkdir -p workspaces/kb workspaces/cs
-          printf 'PI_FACADE_ENGINE=fake\nPI_FACADE_API_KEYS=ci-smoke-key\nHTTP_PORT=8090\nFACADE_VERSION=ci\nGATEWAY_DIR=./gateway-src\n' > .env
           docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml up -d --build
           for i in $(seq 1 60); do
             if curl -fsS http://127.0.0.1:8090/kb/api/health >/dev/null 2>&1 && curl -fsS http://127.0.0.1:8090/cs/api/health >/dev/null 2>&1; then
@@ -78,7 +81,10 @@ jobs:
             fi
             sleep 3
           done
-          echo "demos never became healthy" >&2; exit 1
+          echo "demos never became healthy — inline diagnostics:" >&2
+          docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml ps -a >&2 || true
+          docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml logs --tail=100 >&2 || true
+          exit 1
       - name: Demo smoke (pages, file CRUD, doc sync, chat rounds over SSE)
         run: DEMO_BASE=http://127.0.0.1:8090 node scripts/demo-smoke.mjs
       - name: Stack logs (on failure)
