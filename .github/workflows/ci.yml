@@ -75,21 +75,13 @@ jobs:
         run: |
           mkdir -p workspaces/kb workspaces/cs
           diagnostics() {
-            {
-              echo "== ps =="
-              docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml ps -a
-              echo "== kb-demo logs =="
-              docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml logs --tail=40 kb-demo
-              echo "== cs-demo logs =="
-              docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml logs --tail=40 cs-demo
-              echo "== nginx logs =="
-              docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml logs --tail=40 nginx
-              echo "== facade logs =="
-              docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml logs --tail=40 facade
-            } > /tmp/demos-diag.txt 2>&1 || true
-            cat /tmp/demos-diag.txt >&2 || true
-            ONELINE=$(tr '\n' '|' < /tmp/demos-diag.txt | tr -d '\r' | tail -c 900)
-            echo "::error title=demos-boot-diagnostics::$ONELINE"
+            # Per-service annotations: job logs need a login to read, check-run
+            # annotations are public — this is the self-service failure channel.
+            echo "::error title=demos-ps::$(docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml ps -a 2>&1 | tr '\n' '|' | tail -c 1400)"
+            echo "::error title=demos-kb-logs::$(docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml logs --tail=30 kb-demo 2>&1 | tr '\n' '|' | tail -c 1400)"
+            echo "::error title=demos-cs-logs::$(docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml logs --tail=30 cs-demo 2>&1 | tr '\n' '|' | tail -c 1400)"
+            echo "::error title=demos-nginx-logs::$(docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml logs --tail=15 nginx 2>&1 | tr '\n' '|' | tail -c 700)"
+            docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml logs --tail=60 >&2 || true
           }
           if ! docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml up -d --build; then
             echo "compose up failed" >&2

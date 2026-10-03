@@ -57,8 +57,11 @@ hub.tapEngine((listener) => engine.subscribeAll(listener));
 
 const app = await buildServer(config, engine, { hub, cards });
 
-const url = await app.listen({ port: config.port, host: config.host });
-console.log(`pi-api-facade listening on ${url} (prefix ${config.prefix}, agentDir ${config.agentDir})`);
+await app.listen({ port: config.port, host: config.host });
+// Print the CONFIGURED bind address: fastify renders a wildcard (0.0.0.0) bind
+// as "http://127.0.0.1:<port>", which reads like a loopback-only listener in
+// container logs and misleads exactly when reachability matters.
+console.log(`pi-api-facade listening on ${config.host}:${config.port} (prefix ${config.prefix}, agentDir ${config.agentDir})`);
 if (config.apiKeys.length === 0) {
   console.warn("WARNING: PI_FACADE_API_KEYS is empty — every authenticated call will be rejected (fail closed)");
 }
