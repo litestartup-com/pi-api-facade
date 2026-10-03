@@ -18,8 +18,10 @@ import {
   VERSION,
   type AgentSession,
   type ExtensionAPI,
+  type InlineExtension,
   type SessionInfo,
 } from "@earendil-works/pi-coding-agent";
+import { Type } from "typebox";
 import {
   EngineError,
   type ApprovalGate,
@@ -32,6 +34,8 @@ import {
   type EngineSessionItem,
   type MuxPayload,
   type PiEngine,
+  type QuestionGate,
+  type QuestionItem,
   type SandboxMode,
 } from "./engine.ts";
 import { historyEntriesToEvents, projectionsFromEntries, SessionTranslator } from "./translate-pi.ts";
@@ -48,6 +52,8 @@ export interface SdkEngineOptions {
   allowModelNetwork?: boolean;
   /** Operator approval bridge; consulted for every tool call of danger-full-access sessions. */
   approvalGate?: ApprovalGate;
+  /** Operator question bridge; backs the ask_user custom tool in every tier. */
+  questionGate?: QuestionGate;
   /** Fires after a run fully settles (agent_settled) — the git-commit hook hangs here. */
   onRunSettled?: (info: { sessionId: string; cwd: string }) => void;
 }
@@ -56,11 +62,12 @@ export interface SdkEngineOptions {
  * Per-tier tool allowlists (contract-map §12). Pi has no path sandbox, so the
  * read-only tier drops every mutating tool (bash included — it cannot be
  * constrained); the containerized node form provides the real mount boundary.
+ * ask_user stays active in every tier: asking is never dangerous.
  */
 const TIER_TOOLS: Record<SandboxMode, string[]> = {
-  "read-only": ["read", "grep", "find", "ls"],
-  "workspace-write": ["read", "grep", "find", "ls", "bash", "edit", "write"],
-  "danger-full-access": ["read", "grep", "find", "ls", "bash", "edit", "write"],
+  "read-only": ["read", "grep", "find", "ls", "ask_user"],
+  "workspace-write": ["read", "grep", "find", "ls", "bash", "edit", "write", "ask_user"],
+  "danger-full-access": ["read", "grep", "find", "ls", "bash", "edit", "write", "ask_user"],
 };
 
 type PiModel = NonNullable<ReturnType<ModelRuntime["getModel"]>>;
@@ -337,45 +344,103 @@ export class SdkPiEngine implements PiEngine {
     const model = await this.resolveModel(sessionIdForOverride !== null ? this.modelOverrides.get(sessionIdForOverride) ?? null : null);
     const runtime = await this.ensureRuntime();
 
-    // The approval bridge is an inline extension: Pi's tool_call hook can
-    // block a call until the operator decides (upstream-verified block
-    // semantics). The gate only fires for danger-full-access sessions; every
-    // other tier runs tools directly.
-    const gate = this.options.approvalGate;
+    // Operator bridges live in one inline extension: the tool_call hook can
+    // block a call until an approval decision arrives (upstream-verified block
+    // semantics; danger tier only), and the ask_user custom tool gives Pi the
+    // question surface it lacks — its execute() suspends on the CardTable and
+    // returns the operator's answers as the tool result.
+    const approvalGate = this.options.approvalGate;
+    const questionGate = this.options.questionGate;
     const holder: { sessionId: string | null } = { sessionId: null };
     const tierOf = (sessionId: string): SandboxMode => this.tierOf(sessionId);
+    const extensionFactories: InlineExtension[] = [];
+    if (approvalGate !== undefined || questionGate !== undefined) {
+      extensionFactories.push({
+        name: "dac-operator-bridges",
+        hidden: true,
+        factory: (pi: ExtensionAPI): void => {
+          if (approvalGate !== undefined) {
+            pi.on("tool_call", async (event) => {
+              const sessionId = holder.sessionId;
+              if (sessionId === null || tierOf(sessionId) !== "danger-full-access") return {};
+              const outcome = await approvalGate({
+                sessionId,
+                approvalId: event.toolCallId,
+                toolName: event.toolName,
+                callId: event.toolCallId,
+                reason: summarizeInput(event.input),
+              });
+              if (outcome === "allowed-once") return {};
+              const reason =
+                outcome === "unavailable"
+                  ? "no operator was available to approve this tool call"
+                  : `the operator ${outcome} this tool call`;
+              return { block: true, reason };
+            });
+          }
+          if (questionGate !== undefined) {
+            pi.registerTool({
+              name: "ask_user",
+              label: "Ask the operator",
+              description:
+                "Ask the operator one or more questions and wait for the answers. Use when a decision or missing information blocks progress. Each question needs a stable id and the question text; provide options (label + optional description) when the answer is a choice, and multiSelect when several options may be chosen.",
+              parameters: Type.Object({
+                questions: Type.Array(
+                  Type.Object({
+                    id: Type.String({ description: "Stable id for this question; answers reference it" }),
+                    question: Type.String({ description: "The question text" }),
+                    options: Type.Optional(
+                      Type.Array(
+                        Type.Object({
+                          label: Type.String({ description: "Short option label" }),
+                          description: Type.Optional(Type.String({ description: "One-sentence explanation of the tradeoff" })),
+                        }),
+                        { description: "Choices for the operator; omit for a free-text answer" },
+                      ),
+                    ),
+                    multiSelect: Type.Optional(Type.Boolean({ description: "True when several options may be selected" })),
+                  }),
+                  { minItems: 1, description: "Questions to ask (usually one)" },
+                ),
+              }),
+              executionMode: "sequential",
+              async execute(_toolCallId, params) {
+                const sessionId = holder.sessionId;
+                if (sessionId === null) {
+                  return {
+                    content: [{ type: "text", text: "Error: no bound session for this question" }],
+                    details: null,
+                  };
+                }
+                const resolution = await questionGate({
+                  sessionId,
+                  questions: params.questions as QuestionItem[],
+                });
+                if (resolution.cancelled) {
+                  return {
+                    content: [
+                      {
+                        type: "text",
+                        text: `The operator did not answer (the question was ${resolution.outcome}). Proceed with a clearly stated reasonable assumption, or stop and explain what is missing.`,
+                      },
+                    ],
+                    details: null,
+                  };
+                }
+                return {
+                  content: [{ type: "text", text: `Operator answers (JSON): ${JSON.stringify(resolution.answers)}` }],
+                  details: { answers: resolution.answers },
+                };
+              },
+            });
+          }
+        },
+      });
+    }
     const resourceLoader = new DefaultResourceLoader({
       cwd,
       agentDir: this.options.agentDir,
-      ...(gate !== undefined
-        ? {
-            extensionFactories: [
-              {
-                name: "dac-approval-gate",
-                hidden: true,
-                factory: (pi: ExtensionAPI): void => {
-                  pi.on("tool_call", async (event) => {
-                    const sessionId = holder.sessionId;
-                    if (sessionId === null || tierOf(sessionId) !== "danger-full-access") return {};
-                    const outcome = await gate({
-                      sessionId,
-                      approvalId: event.toolCallId,
-                      toolName: event.toolName,
-                      callId: event.toolCallId,
-                      reason: summarizeInput(event.input),
-                    });
-                    if (outcome === "allowed-once") return {};
-                    const reason =
-                      outcome === "unavailable"
-                        ? "no operator was available to approve this tool call"
-                        : `the operator ${outcome} this tool call`;
-                    return { block: true, reason };
-                  });
-                },
-              },
-            ],
-          }
-        : {}),
+      ...(extensionFactories.length > 0 ? { extensionFactories } : {}),
     });
     await resourceLoader.reload();
 

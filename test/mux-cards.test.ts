@@ -237,6 +237,74 @@ test("card TTL expiry resolves the gate as expired and broadcasts the resolved f
   assert.equal(shortTable.size, 0);
 });
 
+// ---- question cards (D3: the ask_user bridge) ----
+
+const respondVia = async (rpcId: string, result: unknown): Promise<unknown> => {
+  const res = await fetch(`${base}${config.prefix}/respond`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": KEY },
+    body: JSON.stringify({ type: "client-response", rpcId, result }),
+  });
+  assert.equal(res.status, 200);
+  return res.json();
+};
+
+test("question card: minted, recoverable, answered — gate resolves with the answers", async () => {
+  const gate = cards.requestQuestion({
+    sessionId: "s-q1",
+    questions: [{ id: "q1", question: "Which option?", options: [{ label: "A" }, { label: "B" }] }],
+  });
+  // recoverable through answerer/pending with method question/requested
+  let entry: { rpcId: string; method: string; payload: Record<string, unknown> } | undefined;
+  for (let i = 0; i < 50 && entry === undefined; i++) {
+    const res = await fetch(`${base}${config.prefix}/answerer/pending`, { headers: { "x-api-key": KEY } });
+    const body = (await res.json()) as { pending: Array<{ rpcId: string; method: string; payload: Record<string, unknown> }> };
+    entry = body.pending.find((p) => p.payload["sessionId"] === "s-q1");
+    if (entry === undefined) await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  assert.ok(entry, "the question card is listed for recovery");
+  assert.equal(entry.method, "question/requested");
+  assert.deepEqual(entry.payload["questions"], [{ id: "q1", question: "Which option?", options: [{ label: "A" }, { label: "B" }] }]);
+
+  // wrong session → not-pending
+  assert.deepEqual(await respondVia(entry.rpcId, { ok: true, value: { sessionId: "other", answer: { answers: [] } } }), {
+    accepted: false,
+    reason: "not-pending",
+  });
+  // malformed answer → bad-response
+  assert.deepEqual(await respondVia(entry.rpcId, { ok: true, value: { sessionId: "s-q1" } }), {
+    accepted: false,
+    reason: "bad-response",
+  });
+  // the real answer
+  assert.deepEqual(
+    await respondVia(entry.rpcId, { ok: true, value: { sessionId: "s-q1", answer: { answers: [{ id: "q1", selected: ["B"] }] } } }),
+    { accepted: true },
+  );
+  assert.deepEqual(await gate, { cancelled: false, answers: [{ id: "q1", selected: ["B"] }] });
+});
+
+test("question card: decline (cancelled) resolves as cancelled", async () => {
+  const gate = cards.requestQuestion({ sessionId: "s-q2", questions: [{ id: "q1", question: "Continue?" }] });
+  const rpcId = cards.pendingList().find((p) => p.payload["sessionId"] === "s-q2")!.rpcId;
+  assert.deepEqual(
+    await respondVia(rpcId, { ok: false, error: { code: "cancelled", message: "the user cancelled ask_user_question" } }),
+    { accepted: true },
+  );
+  assert.deepEqual(await gate, { cancelled: true, outcome: "cancelled" });
+});
+
+test("question card: TTL expiry resolves as cancelled/expired and broadcasts question/resolved", async () => {
+  const seen: Array<Record<string, unknown>> = [];
+  const shortTable = new CardTable((payload) => seen.push(payload as unknown as Record<string, unknown>), 60);
+  const resolution = await shortTable.requestQuestion({ sessionId: "s-q3", questions: [{ id: "q1", question: "Q?" }] });
+  assert.deepEqual(resolution, { cancelled: true, outcome: "expired" });
+  const resolved = seen.find((p) => p["type"] === "question/resolved");
+  assert.ok(resolved, "a question/resolved frame is broadcast on expiry");
+  assert.equal(resolved["outcome"], "expired");
+  assert.equal(shortTable.size, 0);
+});
+
 test("sandbox-mode: live pin, cold 409, bad mode 400, auth 401", async () => {
   const created = await engine.createSession("/tmp/ws-sandbox");
   const url = `${base}${config.prefix}/sessions/${created.sessionId}/sandbox-mode`;

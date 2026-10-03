@@ -37,6 +37,7 @@ if (engineMode === "sdk") {
     allowFullAccess: config.allowFullAccess,
     defaultModel,
     approvalGate: (request) => cards.requestApproval(request),
+    questionGate: (request) => cards.requestQuestion(request),
     onRunSettled: ({ sessionId, cwd }) => {
       commitWorkspace(cwd, sessionId).catch((error: unknown) => {
         console.error("git-hook failed:", error);

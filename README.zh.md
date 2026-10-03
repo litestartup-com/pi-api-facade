@@ -58,9 +58,9 @@ docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml up -d -
 DEMO_BASE=http://127.0.0.1:8090 node scripts/demo-smoke.mjs
 ```
 
-Pi 运行时相对 DSH 栈的降级（诚实口径）：`ask_user` 桥落地前没有问题卡（agent
-用正文提问）；审批卡只在 danger 档触发——KB demo 的自动放行策略在 Pi 栈上是
-空转（真正的护栏是沙箱钉档，与 DSH 同理）。
+Pi 运行时相对 DSH 栈的口径：问题卡走 `ask_user` 自定义工具（由模型决定何时
+提问——两个 demo 和 manager 里都能渲染成卡片）；审批卡只在 danger 档触发——
+KB demo 的自动放行策略在 Pi 栈上是空转（真正的护栏是沙箱钉档，与 DSH 同理）。
 
 ## 快速开始（裸进程）
 

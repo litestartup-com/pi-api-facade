@@ -64,10 +64,10 @@ docker compose -f docker-compose.yml -f examples/demos/compose.demos.yml up -d -
 DEMO_BASE=http://127.0.0.1:8090 node scripts/demo-smoke.mjs
 ```
 
-Pi-runtime degradations vs the DSH stack (honest, documented): question cards do
-not appear until the `ask_user` bridge lands (the agent asks clarifications in
-plain reply text), and approval cards fire only in the danger tier — so the KB
-demo's auto-approve policy is a no-op here (the sandbox pin is the real guard).
+Pi-runtime notes vs the DSH stack: question cards ride the `ask_user` custom
+tool (the model decides when to ask — cards render in both demos and in the
+manager); approval cards fire only in the danger tier, so the KB demo's
+auto-approve policy is a no-op here (the sandbox pin is the real guard).
 
 ## Quick start (bare process)
 

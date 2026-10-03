@@ -144,8 +144,8 @@ The manager calls only these 12 methods (`rpc.ts:24-40`). Facade obligations:
 | --- | --- | --- |
 | `session/event` | `{sessionId, event, view?}` | `event` mapped by §8 `eventPayload` |
 | `session/projection` | `{sessionId, key, value, seq?}` | keys consumed: `goal`, `tokenUsage`, `title`; all others dropped (`mux.ts:160-165`, `translate.ts:259-274,309-313`). v1 emits `title` and `tokenUsage`; never `goal` |
-| `question/requested` | `{sessionId, questions:[{id, question, …}]}` | envelope `rpcId` becomes the manager's questionId (`translate.ts:331-336`). **v1: never emitted** (Pi has no question surface) |
-| `question/resolved` | `{sessionId, questionRpcId, outcome}` | — |
+| `question/requested` | `{sessionId, questions:[{id, question, …}]}` | envelope `rpcId` becomes the manager's questionId (`translate.ts:331-336`). Emitted by the `ask_user` tool bridge (D3): the Pi-side custom tool suspends until respond delivers the answers |
+| `question/resolved` | `{sessionId, questionRpcId, outcome}` | outcome: `answered` / `cancelled` / `expired` |
 | `approval/requested` | `{sessionId, approvalId, toolName, callId?, reason?}` | envelope `rpcId` = respond echo id; manager maps approvalId→rpcId (`mux.ts:149-153`, `translate.ts:351-358`) |
 | `approval/resolved` | `{sessionId, approvalId, outcome}` | outcome vocabulary as emitted by the host (`translate.ts:365-371`) |
 
@@ -326,8 +326,9 @@ Response:
 1. `session.rename` / `session.fork` / `session.updateQueue` /
    `session.attachment` → `method_not_migrated` (UI actions on pi nodes fail
    with an honest error).
-2. No question cards (`ask_user_question` has no Pi counterpart); approval
-   cards only, and only in the danger tier.
+2. Question cards ride the `ask_user` custom tool (D3): they appear only when
+   the model chooses to ask — Pi has no built-in question surface, so nothing
+   forces a card the way DSH's ask_user_question does.
 3. No goal projection, no context breakdown (both render as absent).
 4. History is full-replay, `hasMore:false` always.
 5. Pending-card table is in-memory (restart loses open cards).

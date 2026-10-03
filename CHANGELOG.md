@@ -7,6 +7,15 @@ Format follows Keep a Changelog; versions follow SemVer.
 
 ### Added
 
+- Question cards via the `ask_user` bridge (D3): Pi has no built-in question
+  surface, so the facade registers an `ask_user` custom tool (TypeBox schema:
+  questions with id/text/options/multiSelect — the manager card UI's shape).
+  The tool suspends on the CardTable, which broadcasts `question/requested`
+  and waits for the frozen respond wire (answers / cancelled decline / TTL →
+  expired), then returns the operator's answers as the tool result. Active in
+  every sandbox tier (asking is never dangerous). Proven offline end to end:
+  scripted stub provider → tool call → wire card → respond → answer back in
+  the transcript → run completes.
 - Web demos on the Pi stack (D2): `examples/demos/compose.demos.yml` overlay —
   KB Studio + Support widget single-sourced from the gateway repo (build context
   via `GATEWAY_DIR`), re-pointed at the Pi facade with pi personas

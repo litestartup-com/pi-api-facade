@@ -99,15 +99,57 @@ export interface ApprovalResolvedPayload {
   outcome: string;
 }
 
+/** One question of an ask_user batch (shape matches the manager's question card UI). */
+export interface QuestionItem {
+  id: string;
+  question: string;
+  options?: Array<{ label: string; description?: string }>;
+  multiSelect?: boolean;
+}
+
+export interface QuestionRequest {
+  sessionId: string;
+  questions: QuestionItem[];
+}
+
+/** One answered question: selected option labels (plus an optional free-text answer). */
+export interface QuestionAnswerItem {
+  id: string;
+  selected: string[];
+  custom?: string;
+}
+
+export type QuestionResolution =
+  | { cancelled: true; outcome: "cancelled" | "expired" }
+  | { cancelled: false; answers: QuestionAnswerItem[] };
+
+/** Injected by the facade layer (CardTable): resolves when the operator answers, declines, or the card TTL expires. */
+export type QuestionGate = (request: QuestionRequest) => Promise<QuestionResolution>;
+
+export interface QuestionRequestedPayload {
+  type: "question/requested";
+  sessionId: string;
+  questions: QuestionItem[];
+}
+
+export interface QuestionResolvedPayload {
+  type: "question/resolved";
+  sessionId: string;
+  questionRpcId: string;
+  outcome: string;
+}
+
 /**
- * The closed payload set this facade emits (contract-map §4). Question cards
- * are deliberately absent: Pi has no question surface in v1.
+ * The closed payload set this facade emits (contract-map §4): all six frame
+ * types the manager's mux consumer discriminates.
  */
 export type MuxPayload =
   | SessionEventPayload
   | SessionProjectionPayload
   | ApprovalRequestedPayload
-  | ApprovalResolvedPayload;
+  | ApprovalResolvedPayload
+  | QuestionRequestedPayload
+  | QuestionResolvedPayload;
 
 export type EngineListener = (payload: MuxPayload) => void;
 
