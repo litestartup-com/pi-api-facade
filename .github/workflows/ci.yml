@@ -61,7 +61,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: litestartup-com/dsh-api-gateway
-          ref: b8f70c650ef3963d062d8937581d5560bb5c4af2
+          ref: 6225171cb30796daa53b2138da0d841e449065c7
           path: gateway-src
       - uses: actions/setup-node@v4
         with:
