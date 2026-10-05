@@ -86,6 +86,11 @@ npm start
 | `PI_AGENT_DIR` | `~/.pi/agent` | 本节点的 Pi agent 数据目录（auth/models/settings/sessions），一节点一目录 |
 | `PI_FACADE_ALLOW_FULL_ACCESS` | `false` | 是否在本节点解锁 `danger-full-access` 沙箱档 |
 | `DEEPSEEK_API_KEY` | — | provider 密钥，由 Pi 运行时读取；门卫不存储 |
+| `OPENAI_API_KEY` | — | Pi 原生读取的内置 `openai` provider 密钥 |
+| `PI_OPENAI_BASE_URL` | — | 指向任意 **OpenAI 兼容端点**（OpenAI 官方、OneAPI/new-api 中转、vLLM、SGLang、Ollama……）。启动时门面自动合成 `models.json` provider 条目（`api: openai-completions`），再用 `PI_FACADE_MODEL=<provider>/<model-id>` 选中 |
+| `PI_OPENAI_API_KEY` | — | 该端点的密钥，以 `$PI_OPENAI_API_KEY` 环境插值引用——**密钥不落盘**；无鉴权端点（Ollama）可不填 |
+| `PI_OPENAI_PROVIDER` | `openai` | 合成的 provider id。默认覆盖内置 `openai` 的端点并保留其目录模型 id；自定义 id 需配 `PI_OPENAI_MODELS` |
+| `PI_OPENAI_MODELS` | — | 目录里没有的模型 id（逗号分隔，如 vLLM 起的别名），追加/替换到该 provider |
 
 ## 开发
 

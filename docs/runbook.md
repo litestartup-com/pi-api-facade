@@ -19,10 +19,37 @@ that node in-process.
 | `PI_FACADE_ENGINE` | yes | `sdk` for production; `fake` for development (loud warning) |
 | `PI_FACADE_API_KEYS` | yes | Comma-separated northbound API keys. Empty = every authenticated call is rejected (fail closed) |
 | `DEEPSEEK_API_KEY` | yes (deepseek nodes) | Read by Pi at runtime; the facade never stores it |
+| `PI_OPENAI_BASE_URL` | no | Point the node at an OpenAI-compatible endpoint; see the section below |
+| `PI_OPENAI_API_KEY` / `PI_OPENAI_PROVIDER` / `PI_OPENAI_MODELS` | no | Credential (env-interpolated, never on disk), provider id (default `openai`), extra model ids |
 | `PI_AGENT_DIR` | recommended | Per-node Pi home (auth/models/settings/sessions). Default `~/.pi/agent` is shared — always set one directory per node |
 | `PI_FACADE_MODEL` | no | Default model for new sessions (`provider/model`, default `deepseek/deepseek-flash`) |
 | `PI_FACADE_HOST` / `PI_FACADE_PORT` | no | Bind address (default `127.0.0.1:3091`). Exposing beyond loopback is an ops decision; firewall to the manager's egress IP |
 | `PI_FACADE_ALLOW_FULL_ACCESS` | no | Unlocks the `danger-full-access` tier (default off; ops nodes only) |
+
+## OpenAI-compatible endpoints (no models.json hand-editing)
+
+Any endpoint speaking the OpenAI chat-completions API works out of the box
+(OpenAI itself, OneAPI/new-api proxies, vLLM, SGLang, Ollama, ...). Set:
+
+```bash
+PI_OPENAI_BASE_URL=https://my-endpoint/v1   # enables the adapter
+PI_OPENAI_API_KEY=sk-...                    # omit for key-less endpoints (Ollama)
+PI_OPENAI_MODELS=my-model-alias             # only for ids the Pi catalog lacks
+PI_FACADE_MODEL=openai/my-model-alias       # select it as the node default
+```
+
+At boot the facade synthesizes `providers.<PI_OPENAI_PROVIDER:-openai>` in
+`<PI_AGENT_DIR>/models.json` (`api: openai-completions`, `baseUrl`, and
+`apiKey: "$PI_OPENAI_API_KEY"` — Pi interpolates the env var at request time,
+so the secret never lands on disk). Upstream semantics that matter here
+(pinned Pi docs, models.md): registering only `baseUrl` for an existing
+provider id preserves its built-in catalog models; a `models` entry adds or
+replaces the same id; a provider entry already present in the file always wins
+(env synthesis never clobbers hand config — the boot log says so).
+
+Manager-side follow-through when a DAC node switches model family: update the
+agent's billing pin (`agents.<id>.provider/model`) and add a `pricing.models`
+row for the reported model name — see contract-map §1 "Billing pin".
 
 ## First boot (per node)
 

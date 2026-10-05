@@ -40,8 +40,8 @@ $env:PI_AGENT_DIR = (Resolve-Path $AgentDir).Path
 $env:PI_FACADE_PORT = "$Port"
 if (-not $env:PI_FACADE_HOST) { $env:PI_FACADE_HOST = "127.0.0.1" }
 
-if ($Engine -eq "sdk" -and -not $env:DEEPSEEK_API_KEY) {
-  Write-Warning "DEEPSEEK_API_KEY is not set — deepseek sessions will fail until a provider credential is available"
+if ($Engine -eq "sdk" -and -not $env:DEEPSEEK_API_KEY -and -not $env:OPENAI_API_KEY -and -not $env:PI_OPENAI_API_KEY -and -not $env:PI_OPENAI_BASE_URL) {
+  Write-Warning "no provider credential found (DEEPSEEK_API_KEY / OPENAI_API_KEY / PI_OPENAI_*) — model turns will fail until one is set"
 }
 
 Push-Location $repo

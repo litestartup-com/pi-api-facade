@@ -11,8 +11,14 @@ if [ -z "${PI_FACADE_API_KEYS}" ]; then
     exit 1
 fi
 
-if [ -z "${DEEPSEEK_API_KEY}" ]; then
-    echo "pi-api-facade: WARNING — DEEPSEEK_API_KEY is not set; deepseek sessions will fail at runtime." >&2
+# Provider credentials: any recognized source silences the warning. Pi reads
+# per-provider env vars natively (DEEPSEEK_API_KEY, OPENAI_API_KEY, ...); the
+# PI_OPENAI_* family synthesizes an OpenAI-compatible endpoint at boot
+# (src/openai-compat.ts). A key-less PI_OPENAI_BASE_URL is valid (Ollama-style
+# endpoints ignore auth).
+if [ -z "${DEEPSEEK_API_KEY}" ] && [ -z "${OPENAI_API_KEY}" ] && [ -z "${PI_OPENAI_API_KEY}" ] && [ -z "${PI_OPENAI_BASE_URL}" ]; then
+    echo "pi-api-facade: WARNING — no provider credential found (DEEPSEEK_API_KEY / OPENAI_API_KEY / PI_OPENAI_*);" >&2
+    echo "  model turns will fail at runtime until the selected provider has a credential." >&2
 fi
 
 # Headless project trust: Pi cannot prompt in a container, and without a saved

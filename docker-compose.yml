@@ -50,6 +50,15 @@ services:
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
       PI_FACADE_MODEL: ${PI_FACADE_MODEL:-deepseek/deepseek-flash}
       PI_FACADE_ALLOW_FULL_ACCESS: ${PI_FACADE_ALLOW_FULL_ACCESS:-}
+      # OpenAI-compatible endpoint (OpenAI itself, OneAPI/new-api proxies, vLLM,
+      # SGLang, Ollama, ...): set PI_OPENAI_BASE_URL (+ key/models as needed)
+      # and PI_FACADE_MODEL=openai/<model-id>. The facade synthesizes the
+      # models.json provider entry at boot; the key never lands on disk.
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      PI_OPENAI_BASE_URL: ${PI_OPENAI_BASE_URL:-}
+      PI_OPENAI_API_KEY: ${PI_OPENAI_API_KEY:-}
+      PI_OPENAI_PROVIDER: ${PI_OPENAI_PROVIDER:-}
+      PI_OPENAI_MODELS: ${PI_OPENAI_MODELS:-}
     volumes:
       # The node's Pi home: auth.json, models.json, settings.json, session JSONL.
       # One volume per node — never share between nodes.

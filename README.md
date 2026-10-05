@@ -93,6 +93,11 @@ All configuration is environment-driven (no config files, no secrets on disk):
 | `PI_AGENT_DIR` | `~/.pi/agent` | Pi agent home for this node (auth/models/settings/sessions). One directory per node. |
 | `PI_FACADE_ALLOW_FULL_ACCESS` | `false` | Unlock the `danger-full-access` sandbox tier on this node. |
 | `DEEPSEEK_API_KEY` | — | Provider credential, read by Pi at runtime. Never stored by the facade. |
+| `OPENAI_API_KEY` | — | Native Pi credential for the built-in `openai` provider. |
+| `PI_OPENAI_BASE_URL` | — | Point the node at any **OpenAI-compatible endpoint** (OpenAI, OneAPI/new-api proxies, vLLM, SGLang, Ollama, ...). At boot the facade synthesizes a `models.json` provider entry (`api: openai-completions`); select it with `PI_FACADE_MODEL=<provider>/<model-id>`. |
+| `PI_OPENAI_API_KEY` | — | Credential for that endpoint, referenced as `$PI_OPENAI_API_KEY` env interpolation — it never lands on disk. Omit for key-less endpoints (Ollama). |
+| `PI_OPENAI_PROVIDER` | `openai` | Provider id to synthesize. The default overrides the built-in `openai` endpoint and keeps its catalog model ids; a custom id requires `PI_OPENAI_MODELS`. |
+| `PI_OPENAI_MODELS` | — | Comma-separated model ids the catalog lacks (e.g. vLLM-served aliases); added/replaced on the synthesized provider. |
 
 ## Development
 

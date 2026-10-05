@@ -7,6 +7,16 @@ Format follows Keep a Changelog; versions follow SemVer.
 
 ### Added
 
+- OpenAI-compatible endpoints out of the box: `PI_OPENAI_BASE_URL` (+
+  `PI_OPENAI_API_KEY` / `PI_OPENAI_PROVIDER` / `PI_OPENAI_MODELS`) makes boot
+  synthesize a `models.json` provider entry (`api: openai-completions`) for any
+  endpoint speaking the OpenAI chat-completions API — OpenAI itself,
+  OneAPI/new-api proxies, vLLM, SGLang, Ollama. The key is referenced by Pi's
+  `$ENV` interpolation (never on disk); the default provider id `openai` keeps
+  the built-in catalog model ids; an entry already in the file always wins.
+  Compose passes the new envs through, the entrypoint/launcher credential
+  warnings generalized, runbook + READMEs document the flow including the
+  manager-side billing-pin follow-through.
 - Cross-implementation conformance (D4): the gateway repo now hosts
   `conformance/conformance.mjs` — one zero-dependency suite asserting the
   intersection both facades guarantee (carrier codes, envelope invariants,

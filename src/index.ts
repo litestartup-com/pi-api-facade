@@ -11,6 +11,7 @@ import { SdkPiEngine } from "./engine-sdk.ts";
 import { MuxHub } from "./mux-hub.ts";
 import { CardTable } from "./cards.ts";
 import { commitWorkspace } from "./git-hook.ts";
+import { applyOpenAiCompat } from "./openai-compat.ts";
 
 const config = loadConfig();
 
@@ -31,6 +32,10 @@ const cards = new CardTable((payload, rpcId) => hub.broadcast(payload, rpcId));
 const engineMode = process.env["PI_FACADE_ENGINE"] ?? "";
 let engine: PiEngine;
 if (engineMode === "sdk") {
+  if (config.openaiCompat !== null) {
+    const compat = applyOpenAiCompat(config.agentDir, config.openaiCompat);
+    console.log(`openai-compat: ${compat.note}`);
+  }
   const defaultModel = parseModel(process.env["PI_FACADE_MODEL"]) ?? { provider: "deepseek", model: "deepseek-flash" };
   engine = new SdkPiEngine({
     agentDir: config.agentDir,
