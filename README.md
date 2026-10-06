@@ -99,6 +99,17 @@ All configuration is environment-driven (no config files, no secrets on disk):
 | `PI_OPENAI_PROVIDER` | `openai` | Provider id to synthesize. The default overrides the built-in `openai` endpoint and keeps its catalog model ids; a custom id requires `PI_OPENAI_MODELS`. |
 | `PI_OPENAI_MODELS` | — | Comma-separated model ids the catalog lacks (e.g. vLLM-served aliases); added/replaced on the synthesized provider. |
 
+> **Shared vocabulary with dsh-api-gateway**: every `PI_OPENAI_*` variable above
+> also accepts the neutral name — `OPENAI_BASE_URL`, `OPENAI_API_KEY`,
+> `OPENAI_PROVIDER`, `OPENAI_MODELS` (plus `OPENAI_MODEL` as the single-model
+> shorthand) — and `PI_FACADE_MODEL` accepts `FACADE_MODEL`. These are the same
+> names the sibling [dsh-api-gateway](https://github.com/litestartup-com/dsh-api-gateway)
+> standalone stack uses, so one operator — or one DAC manager wiring layer —
+> feeds a Pi node and a DSH node the same model configuration. On conflict the
+> `PI_*` name wins. One semantic note: here `PI_OPENAI_MODELS` **adds to** the
+> provider's catalog, where the DSH stack's list **replaces** it — against a
+> custom gateway you list what it serves either way.
+
 ## Development
 
 ```bash

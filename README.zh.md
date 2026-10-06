@@ -92,6 +92,15 @@ npm start
 | `PI_OPENAI_PROVIDER` | `openai` | 合成的 provider id。默认覆盖内置 `openai` 的端点并保留其目录模型 id；自定义 id 需配 `PI_OPENAI_MODELS` |
 | `PI_OPENAI_MODELS` | — | 目录里没有的模型 id（逗号分隔，如 vLLM 起的别名），追加/替换到该 provider |
 
+> **与 dsh-api-gateway 共用词汇**：上表每个 `PI_OPENAI_*` 变量都同时接受中立名——
+> `OPENAI_BASE_URL`、`OPENAI_API_KEY`、`OPENAI_PROVIDER`、`OPENAI_MODELS`
+> （另有 `OPENAI_MODEL` 单模型简写）；`PI_FACADE_MODEL` 同样接受 `FACADE_MODEL`。
+> 这正是姊妹项目 [dsh-api-gateway](https://github.com/litestartup-com/dsh-api-gateway)
+> 独立栈使用的名字——同一份运维/manager 配置可以同时喂 Pi 节点和 DSH 节点。
+> 两套同时出现时 `PI_*` 优先。一处语义差异要诚实标注：本项目的
+> `PI_OPENAI_MODELS` 是在目录上**追加**，DSH 栈的列表是**整体替换**——对着自家
+> 网关时反正都要显式列出它真正供的模型，实际效果一致。
+
 ## 开发
 
 ```bash

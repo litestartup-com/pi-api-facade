@@ -54,11 +54,19 @@ services:
       # SGLang, Ollama, ...): set PI_OPENAI_BASE_URL (+ key/models as needed)
       # and PI_FACADE_MODEL=openai/<model-id>. The facade synthesizes the
       # models.json provider entry at boot; the key never lands on disk.
+      # Every PI_OPENAI_* / PI_FACADE_MODEL var also accepts the neutral shared
+      # name (OPENAI_* / FACADE_MODEL — the vocabulary shared with the sibling
+      # dsh-api-gateway stack); PI_* wins on conflict.
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       PI_OPENAI_BASE_URL: ${PI_OPENAI_BASE_URL:-}
       PI_OPENAI_API_KEY: ${PI_OPENAI_API_KEY:-}
       PI_OPENAI_PROVIDER: ${PI_OPENAI_PROVIDER:-}
       PI_OPENAI_MODELS: ${PI_OPENAI_MODELS:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+      OPENAI_PROVIDER: ${OPENAI_PROVIDER:-}
+      OPENAI_MODELS: ${OPENAI_MODELS:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+      FACADE_MODEL: ${FACADE_MODEL:-}
     volumes:
       # The node's Pi home: auth.json, models.json, settings.json, session JSONL.
       # One volume per node — never share between nodes.

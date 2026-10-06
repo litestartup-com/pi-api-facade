@@ -57,6 +57,62 @@ test("config: key, provider id and model list parse; bad values rejected", () =>
   assert.throws(() => loadConfig({ PI_FACADE_API_KEYS: "k", PI_OPENAI_BASE_URL: "http://x/v1", PI_OPENAI_PROVIDER: "a/b" }), /PI_OPENAI_PROVIDER/);
 });
 
+// ---- shared vocabulary aliases (OPENAI_* / FACADE_MODEL) ----
+// The neutral names are shared with the sibling dsh-api-gateway standalone stack,
+// so one operator — or one DAC manager wiring layer — feeds both facade kinds the
+// same model configuration. PI_* names stay primary: they win on conflict.
+
+test("config: neutral OPENAI_* aliases activate the same compat block", () => {
+  const cfg = loadConfig({
+    PI_FACADE_API_KEYS: "k",
+    OPENAI_BASE_URL: "https://shared.example/v1",
+    OPENAI_API_KEY: "sk-neutral",
+    OPENAI_PROVIDER: "shared-gw",
+    OPENAI_MODELS: "m1, m2",
+  });
+  assert.ok(cfg.openaiCompat);
+  assert.equal(cfg.openaiCompat.baseUrl, "https://shared.example/v1");
+  assert.equal(cfg.openaiCompat.provider, "shared-gw");
+  assert.deepEqual(cfg.openaiCompat.models, ["m1", "m2"]);
+  assert.equal(cfg.openaiCompat.apiKeyRef, "$OPENAI_API_KEY", "the ref follows the variable that actually carries the key");
+});
+
+test("config: PI_* names win over the neutral aliases on conflict", () => {
+  const cfg = loadConfig({
+    PI_FACADE_API_KEYS: "k",
+    PI_OPENAI_BASE_URL: "https://pi.example/v1",
+    OPENAI_BASE_URL: "https://neutral.example/v1",
+    PI_OPENAI_API_KEY: "sk-pi",
+    OPENAI_API_KEY: "sk-neutral",
+    PI_OPENAI_PROVIDER: "pi-gw",
+    OPENAI_PROVIDER: "neutral-gw",
+    PI_OPENAI_MODELS: "pi-model",
+    OPENAI_MODELS: "neutral-model",
+  });
+  assert.ok(cfg.openaiCompat);
+  assert.equal(cfg.openaiCompat.baseUrl, "https://pi.example/v1");
+  assert.equal(cfg.openaiCompat.apiKeyRef, "$PI_OPENAI_API_KEY");
+  assert.equal(cfg.openaiCompat.provider, "pi-gw");
+  assert.deepEqual(cfg.openaiCompat.models, ["pi-model"]);
+});
+
+test("config: OPENAI_MODEL is the single-model shorthand; empty strings count as unset", () => {
+  const cfg = loadConfig({
+    PI_FACADE_API_KEYS: "k",
+    OPENAI_BASE_URL: "https://shared.example/v1",
+    OPENAI_API_KEY: "",
+    OPENAI_MODEL: "solo",
+    OPENAI_MODELS: "",
+  });
+  assert.ok(cfg.openaiCompat);
+  assert.deepEqual(cfg.openaiCompat.models, ["solo"]);
+  assert.equal(cfg.openaiCompat.apiKeyRef, null, "empty key env = key-less endpoint, Pi native fallback stays alive");
+});
+
+test("config: neutral alias URL validation reports both names", () => {
+  assert.throws(() => loadConfig({ PI_FACADE_API_KEYS: "k", OPENAI_BASE_URL: "ftp://x" }), /PI_OPENAI_BASE_URL\/OPENAI_BASE_URL/);
+});
+
 // ---- models.json synthesis ----
 
 test("synthesis: a fresh agentDir gets a models.json with the compat provider", () => {

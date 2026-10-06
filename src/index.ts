@@ -3,7 +3,7 @@
  * the card table, start the HTTP listener, shut down gracefully on
  * SIGINT/SIGTERM so the DAC node supervisor can restart without orphans.
  */
-import { loadConfig } from "./config.ts";
+import { loadConfig, firstEnv } from "./config.ts";
 import { buildServer } from "./server.ts";
 import type { PiEngine } from "./engine.ts";
 import { FakePiEngine } from "./engine-fake.ts";
@@ -15,12 +15,12 @@ import { applyOpenAiCompat } from "./openai-compat.ts";
 
 const config = loadConfig();
 
-/** Parses "provider/model" (PI_FACADE_MODEL); null when unset or malformed. */
+/** Parses "provider/model" (PI_FACADE_MODEL, neutral alias FACADE_MODEL); null when unset. */
 const parseModel = (raw: string | undefined): { provider: string; model: string } | null => {
   if (raw === undefined || raw === "") return null;
   const slash = raw.indexOf("/");
   if (slash <= 0 || slash === raw.length - 1) {
-    console.error(`PI_FACADE_MODEL must look like "provider/model", got: ${raw}`);
+    console.error(`PI_FACADE_MODEL/FACADE_MODEL must look like "provider/model", got: ${raw}`);
     process.exit(1);
   }
   return { provider: raw.slice(0, slash), model: raw.slice(slash + 1) };
@@ -36,7 +36,7 @@ if (engineMode === "sdk") {
     const compat = applyOpenAiCompat(config.agentDir, config.openaiCompat);
     console.log(`openai-compat: ${compat.note}`);
   }
-  const defaultModel = parseModel(process.env["PI_FACADE_MODEL"]) ?? { provider: "deepseek", model: "deepseek-flash" };
+  const defaultModel = parseModel(firstEnv(process.env, "PI_FACADE_MODEL", "FACADE_MODEL")) ?? { provider: "deepseek", model: "deepseek-flash" };
   engine = new SdkPiEngine({
     agentDir: config.agentDir,
     allowFullAccess: config.allowFullAccess,

@@ -49,6 +49,21 @@ const boolOf = (value: string | undefined, fallback: boolean): boolean => {
   return value === "1" || value.toLowerCase() === "true";
 };
 
+/**
+ * Shared-vocabulary alias resolution: the historical PI_* names win; the neutral
+ * OPENAI_* / FACADE_* names (the vocabulary shared with the sibling dsh-api-gateway
+ * standalone stack) are the fallback, so one operator — or one DAC manager wiring
+ * layer — feeds both facade kinds the same model configuration. Empty strings count
+ * as unset (compose pass-through emits them for absent .env values).
+ */
+export const firstEnv = (env: Record<string, string | undefined>, ...names: string[]): string | undefined => {
+  for (const name of names) {
+    const value = env[name];
+    if (value !== undefined && value !== "") return value;
+  }
+  return undefined;
+};
+
 export const loadConfig = (
   env: Record<string, string | undefined> = process.env,
 ): FacadeConfig => {
@@ -76,26 +91,33 @@ export const loadConfig = (
 };
 
 const parseOpenAiCompat = (env: Record<string, string | undefined>): OpenAiCompatConfig | null => {
-  const baseUrl = env["PI_OPENAI_BASE_URL"] ?? "";
+  const baseUrl = firstEnv(env, "PI_OPENAI_BASE_URL", "OPENAI_BASE_URL") ?? "";
   if (baseUrl === "") return null;
   let parsed: URL;
   try {
     parsed = new URL(baseUrl);
   } catch {
-    throw new Error(`PI_OPENAI_BASE_URL must be an absolute http(s) URL, got: ${baseUrl}`);
+    throw new Error(`PI_OPENAI_BASE_URL/OPENAI_BASE_URL must be an absolute http(s) URL, got: ${baseUrl}`);
   }
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    throw new Error(`PI_OPENAI_BASE_URL must be http(s), got: ${baseUrl}`);
+    throw new Error(`PI_OPENAI_BASE_URL/OPENAI_BASE_URL must be http(s), got: ${baseUrl}`);
   }
-  const provider = env["PI_OPENAI_PROVIDER"] ?? "openai";
+  const provider = firstEnv(env, "PI_OPENAI_PROVIDER", "OPENAI_PROVIDER") ?? "openai";
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(provider)) {
-    throw new Error(`PI_OPENAI_PROVIDER must be a plain identifier (letters/digits/._-, no slashes), got: ${provider}`);
+    throw new Error(`PI_OPENAI_PROVIDER/OPENAI_PROVIDER must be a plain identifier (letters/digits/._-, no slashes), got: ${provider}`);
   }
+  // The apiKey reference must name the variable that actually carries the key:
+  // PI_OPENAI_API_KEY when set, else the neutral OPENAI_API_KEY. (OPENAI_API_KEY
+  // additionally remains Pi's native credential for the built-in openai provider
+  // when no compat block is configured at all.)
+  const keyName = (env["PI_OPENAI_API_KEY"] ?? "") !== "" ? "PI_OPENAI_API_KEY"
+    : (env["OPENAI_API_KEY"] ?? "") !== "" ? "OPENAI_API_KEY"
+      : null;
   return {
     baseUrl,
-    apiKeyRef: (env["PI_OPENAI_API_KEY"] ?? "") !== "" ? "$PI_OPENAI_API_KEY" : null,
+    apiKeyRef: keyName === null ? null : `$${keyName}`,
     provider,
-    models: (env["PI_OPENAI_MODELS"] ?? "")
+    models: (firstEnv(env, "PI_OPENAI_MODELS", "OPENAI_MODELS", "OPENAI_MODEL") ?? "")
       .split(",")
       .map((model) => model.trim())
       .filter((model) => model !== ""),
