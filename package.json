@@ -1,6 +1,6 @@
 {
   "name": "pi-api-facade",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "HTTP facade exposing Pi coding agent sessions behind the frozen DAC apiproxy contract",
   "type": "module",
   "license": "MIT",

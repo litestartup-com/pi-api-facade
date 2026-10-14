@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: pi-api-facade — frozen DAC apiproxy contract (Pi runtime)
-  version: 0.1.0
+  version: 0.2.0
   description: |
     Northbound HTTP surface of pi-api-facade. The wire is the frozen apiproxy
     contract also implemented by ohdsh-api-facade (DSH runtime); the manager's
@@ -41,7 +41,7 @@ paths:
                   ok: { type: boolean }
                   status: { type: string, example: ok }
                   service: { type: string, example: pi-api-facade }
-                  version: { type: string, example: 0.1.0 }
+                  version: { type: string, example: 0.2.0 }
                   upstream: { type: string, example: pi-0.87.1 }
   /key:
     post:

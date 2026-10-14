@@ -39,7 +39,7 @@ services:
       args:
         NODE_IMAGE: ${NODE_IMAGE:-node:24-bookworm-slim}
         NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org}
-    image: pi-api-facade:${FACADE_VERSION:-0.1.0}
+    image: pi-api-facade:${FACADE_VERSION:-0.2.0}
     container_name: pi-api-facade
     # Same uid as the host deploy user so the ./workspaces bind mount reads and
     # writes identically on both sides. HOST_UID/HOST_GID come from .env.

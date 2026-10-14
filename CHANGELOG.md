@@ -3,7 +3,12 @@
 All notable changes to this project are documented here.
 Format follows Keep a Changelog; versions follow SemVer.
 
-## [Unreleased]
+## [0.2.0] - 2026-10-14
+
+Feature release on the frozen contract: OpenAI-compatible provider config,
+question cards, the standalone docker stack with web demos, and the
+cross-implementation conformance suite — both modes green against the pinned
+kit with the fake engine and the real Pi SDK engine (offline stub provider).
 
 ### Added
 

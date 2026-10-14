@@ -6,10 +6,15 @@ HTTP facade that exposes [Pi](https://pi.dev) coding agent sessions behind the
 frozen DAC apiproxy contract, so a [DAC](https://github.com/litestartup-com/hellodac)
 manager can run and operate Pi nodes exactly like DSH nodes.
 
-**Status: v0.1.0 — accepted 2026-10-03.** Verified end to end against a
-production DAC manager with real `deepseek-flash` rounds: streaming chat,
-tool calls, history replay, per-run billing (including continued runs), and
-per-run git audit commits. Contract details:
+**Status: v0.2.0 — released 2026-10-14.** Adds OpenAI-compatible provider
+config (`PI_OPENAI_BASE_URL` + friends), question cards via the `ask_user`
+bridge, the standalone docker stack with web demos, and the
+cross-implementation conformance suite — both modes green against the pinned
+kit, with the fake engine and the real Pi SDK engine (offline stub provider).
+The base contract was accepted as v0.1.0 on 2026-10-03, verified end to end
+against a production DAC manager with real `deepseek-flash` rounds: streaming
+chat, tool calls, history replay, per-run billing (including continued runs),
+and per-run git audit commits. Contract details:
 [docs/contract-map.md](./docs/contract-map.md) · operations:
 [docs/runbook.md](./docs/runbook.md) · release history:
 [CHANGELOG.md](./CHANGELOG.md).

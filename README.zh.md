@@ -6,9 +6,13 @@
 让 [DAC](https://github.com/litestartup-com/hellodac) manager 像管 DSH 节点一样
 管 Pi 节点的 HTTP 门卫。
 
-**状态：v0.1.0 —— 2026-10-03 验收通过。** 已对照生产 DAC manager 用真实
-`deepseek-flash` 回合端到端验证：流式聊天、工具调用、历史回放、逐 run 记账
-（含续轮）、每 run 一次 git 审计提交。契约细节见
+**状态：v0.2.0 —— 2026-10-14 发布。** 新增 OpenAI 兼容 provider 配置
+（`PI_OPENAI_BASE_URL` 等）、`ask_user` 桥接的问答卡片、独立 docker 栈与
+web demo、跨实现 conformance 套件——对钉版套件双模式全绿（fake 引擎与
+真实 Pi SDK 引擎离线 stub 双复验）。基础契约于 v0.1.0（2026-10-03）
+验收通过：对照生产 DAC manager 用真实 `deepseek-flash` 回合端到端验证——
+流式聊天、工具调用、历史回放、逐 run 记账（含续轮）、每 run 一次 git
+审计提交。契约细节见
 [docs/contract-map.md](./docs/contract-map.md)，运维见
 [docs/runbook.md](./docs/runbook.md)，发布历史见 [CHANGELOG.md](./CHANGELOG.md)。
 

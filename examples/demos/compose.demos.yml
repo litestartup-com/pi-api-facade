@@ -50,7 +50,7 @@ services:
       dockerfile: examples/demos/kb/Dockerfile
       args:
         NODE_IMAGE: ${NODE_IMAGE:-node:22-bookworm-slim}
-    image: pi-demo-kb:0.1.0
+    image: pi-demo-kb:0.2.0
     container_name: pi-demo-kb
     # Same uid convention as the facade (bind mounts read/write identically).
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
@@ -75,7 +75,7 @@ services:
       dockerfile: examples/demos/cs/Dockerfile
       args:
         NODE_IMAGE: ${NODE_IMAGE:-node:22-bookworm-slim}
-    image: pi-demo-cs:0.1.0
+    image: pi-demo-cs:0.2.0
     container_name: pi-demo-cs
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     environment:
