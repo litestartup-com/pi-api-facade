@@ -24,7 +24,10 @@ Format follows Keep a Changelog; versions follow SemVer.
   the billing invariant). This repo's CI runs it against the Pi facade
   through the front door (gateway checkout pinned by commit); the gateway's
   CI runs the same file against its live stack. Verified against the real
-  facade in both modes (17/18 checks, real-model turn included).
+  facade in both modes, every check green: 17 without the prompt round, 18
+  with it (real-model turn included). The kit fails fast on the first
+  broken check and has no skip mechanism, so a PASS run always reports the
+  full per-mode count.
 - Question cards via the `ask_user` bridge (D3): Pi has no built-in question
   surface, so the facade registers an `ask_user` custom tool (TypeBox schema:
   questions with id/text/options/multiSelect — the manager card UI's shape).
