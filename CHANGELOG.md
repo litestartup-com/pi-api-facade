@@ -3,6 +3,27 @@
 All notable changes to this project are documented here.
 Format follows Keep a Changelog; versions follow SemVer.
 
+## [0.2.1] - 2026-11-20
+
+Pi SDK upgrade: `@earendil-works/pi-coding-agent` 0.87.1 → 1.6.0 (exact pin).
+
+### Changed
+
+- Pinned the Pi SDK to 1.6.0 (`npm install --save-exact`). The 1.x line adds 18
+  exports (MCP/codemode/theme, etc.) with no removals, and
+  `CreateAgentSessionOptions` keeps its 14 fields unchanged; every symbol this
+  facade consumes (`createAgentSession`, `AgentSession`, `SessionManager`,
+  `DefaultResourceLoader`, `ModelRuntime`, `VERSION`) is present in 1.6.0. The
+  only breaking change is the extension-component `render()` returning
+  `readonly string[]`, which this facade does not use (no extension UI
+  rendering).
+- `npm run check` green against 1.6.0: eslint + `tsc --noEmit` + 80 unit tests,
+  including the offline SDK integration gates (text frames, tool/approval
+  round, cold history replay) and the recorded-round wire-frame assertions from
+  the 0.87.1 fixtures — no event-shape regression. The facade still drops cost
+  from usage on the wire (the manager prices runs itself), so no facade-level
+  cost surface changed.
+
 ## [0.2.0] - 2026-10-14
 
 Feature release on the frozen contract: OpenAI-compatible provider config,
