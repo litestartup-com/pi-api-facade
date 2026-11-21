@@ -6,15 +6,16 @@ HTTP facade that exposes [Pi](https://pi.dev) coding agent sessions behind the
 frozen DAC apiproxy contract, so a [DAC](https://github.com/litestartup-com/hellodac)
 manager can run and operate Pi nodes exactly like DSH nodes.
 
-**Status: v0.2.0 — released 2026-10-14.** Adds OpenAI-compatible provider
-config (`PI_OPENAI_BASE_URL` + friends), question cards via the `ask_user`
-bridge, the standalone docker stack with web demos, and the
-cross-implementation conformance suite — both modes green against the pinned
-kit, with the fake engine and the real Pi SDK engine (offline stub provider).
-The base contract was accepted as v0.1.0 on 2026-10-03, verified end to end
-against a production DAC manager with real `deepseek-flash` rounds: streaming
-chat, tool calls, history replay, per-run billing (including continued runs),
-and per-run git audit commits. Contract details:
+**Status: v0.2.1 — released 2026-11-20.** Upgrades the embedded Pi SDK
+(`@earendil-works/pi-coding-agent`) from 0.87.1 to 1.6.0 (exact pin): the 1.x
+line adds 18 exports with no removals, `CreateAgentSessionOptions` keeps its 14
+fields, and `npm run check` stays green (eslint + `tsc --noEmit` + 80 tests,
+including the offline text/tool/approval SDK gates and the recorded-round
+wire-frame assertions). v0.2.0 (2026-10-14) added the OpenAI-compatible
+provider config, question cards via the `ask_user` bridge, the standalone
+docker stack with web demos, and the cross-implementation conformance suite;
+the base contract was accepted as v0.1.0 on 2026-10-03 against a production
+DAC manager with real `deepseek-flash` rounds. Contract details:
 [docs/contract-map.md](./docs/contract-map.md) · operations:
 [docs/runbook.md](./docs/runbook.md) · release history:
 [CHANGELOG.md](./CHANGELOG.md).
